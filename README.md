@@ -1,3 +1,13 @@
+# MCP Create Server
+
+[![NPM version](http://img.shields.io/npm/v/mcp.svg?style=flat-square)](https://www.npmjs.org/package/mcp)
+
+A dynamic MCP server management service that creates, runs, and manages Model Context Protocol (MCP) servers dynamically. This service itself functions as an MCP server and launches/manages other MCP servers as child processes, enabling a flexible MCP ecosystem.
+
+<a href="https://glama.ai/mcp/servers/@MiniMax-AI/MiniMax-MCP">
+  <img width="380" height="200" src="https://glama.ai/mcp/servers/@MiniMax-AI/MiniMax-MCP/badge" alt="MiniMax Server MCP server" />
+</a>
+
 ![export](https://github.com/MiniMax-AI/MiniMax-01/raw/main/figures/MiniMaxLogo-Light.png)
 
 <div align="center" style="line-height: 1;">
@@ -117,4 +127,4 @@ We support two transport types: stdio and sse.
 
 ### 4. generate images
 <img src="https://public-cdn-video-data-algeng.oss-cn-wulanchabu.aliyuncs.com/gen_image.png?x-oss-process=image/resize,p_50/format,webp" style="display: inline-block; vertical-align: middle;"/>
-<img src="https://public-cdn-video-data-algeng.oss-cn-wulanchabu.aliyuncs.com/gen_image1.png?x-oss-process=image/resize,p_50/format,webp" style="display: inline-block; vertical-align: middle; "/>
+<img src="https://public-cdn-video-data-algeng.oss-cn-wulanchabu.aliyuncs.com/gen_image1.png?x-oss-process=image/resize,p_50/format,webp" style="display: inline-block; vertical-align: middle;"/>
