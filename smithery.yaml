@@ -1,0 +1,39 @@
+# Smithery configuration file: https://smithery.ai/docs/build/project-config
+
+startCommand:
+  type: stdio
+  commandFunction:
+    # A JS function that produces the CLI command based on the given config to start the MCP on stdio.
+    |-
+    (config) => ({command: 'minimax-mcp', args: [], env: {MINIMAX_API_KEY: config.minimaxApiKey, MINIMAX_API_HOST: config.minimaxApiHost, MINIMAX_MCP_BASE_PATH: config.minimaxMcpBasePath, MINIMAX_API_RESOURCE_MODE: config.minimaxApiResourceMode, FASTMCP_LOG_LEVEL: config.fastmcpLogLevel}})
+  configSchema:
+    # JSON Schema defining the configuration options for the MCP.
+    type: object
+    required:
+      - minimaxApiKey
+      - minimaxApiHost
+    properties:
+      minimaxApiKey:
+        type: string
+        description: Your MiniMax API key
+      minimaxApiHost:
+        type: string
+        description: MiniMax API host, e.g. https://api.minimaxi.chat
+      minimaxMcpBasePath:
+        type: string
+        default: ""
+        description: Local base path to save resources
+      minimaxApiResourceMode:
+        type: string
+        default: url
+        description: "Resource mode: url or local"
+      fastmcpLogLevel:
+        type: string
+        default: WARNING
+        description: Log level for FastMCP server
+  exampleConfig:
+    minimaxApiKey: sk-xxxxxxx
+    minimaxApiHost: https://api.minimaxi.chat
+    minimaxMcpBasePath: /home/user/output
+    minimaxApiResourceMode: url
+    fastmcpLogLevel: INFO
