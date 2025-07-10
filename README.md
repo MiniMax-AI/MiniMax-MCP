@@ -49,6 +49,14 @@
 |MINIMAX_API_KEY| go get from [MiniMax Global](https://www.minimax.io/platform/user-center/basic-information/interface-key) | go get from [MiniMax](https://platform.minimaxi.com/user-center/basic-information/interface-key) |
 |MINIMAX_API_HOST| https://api.minimax.io | https://api.minimaxi.com |
 
+### Installing via Smithery
+
+To install MiniMax MCP Server for Claude Desktop automatically via [Smithery](https://smithery.ai/server/@MiniMax-AI/MiniMax-MCP):
+
+```bash
+npx -y @smithery/cli install @MiniMax-AI/MiniMax-MCP --client claude
+```
+
 
 ### Claude Desktop
 Go to `Claude > Settings > Developer > Edit Config > claude_desktop_config.json` to include the following:
