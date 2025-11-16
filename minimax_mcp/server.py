@@ -781,7 +781,7 @@ def coding_plan_search(
         
         # Build request payload
         payload = {
-            "query": query
+            "q": query
         }
         
         # Call search API
