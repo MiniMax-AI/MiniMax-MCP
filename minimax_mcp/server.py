@@ -801,9 +801,9 @@ def coding_plan_search(
 
 
 @mcp.tool(
-    description="""Analyze an image using vision language model (VLM).
+    description="""Analyze an image with AI based on your text prompt.
     
-    This tool uses a vision language model to analyze images based on a text prompt.
+    This tool analyzes images and answers questions or extracts information based on your prompt.
     
     COST WARNING: This tool makes an API call to Minimax which may incur costs. Only use when explicitly requested by the user.
     
