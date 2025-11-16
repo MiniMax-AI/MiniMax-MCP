@@ -740,12 +740,14 @@ def voice_design(
 
 
 @mcp.tool(
-    description="""Search for coding-related information using a search query.
+    description="""Search for information using a search query.
     
     This tool performs web searches and returns organic search results along with related search queries.
     
+    COST WARNING: This tool makes an API call to Minimax which may incur costs. Only use when explicitly requested by the user.
+
     Args:
-        query (str): The search query string to find coding-related information.
+        query (str): The search query string.
         
     Returns:
         Text content with search results in JSON format. The response structure is:
@@ -799,7 +801,7 @@ def coding_plan_search(
 
 
 @mcp.tool(
-    description="""Analyze an image using vision language model (VLM) for coding-related tasks.
+    description="""Analyze an image using vision language model (VLM).
     
     This tool uses a vision language model to analyze images based on a text prompt.
     
