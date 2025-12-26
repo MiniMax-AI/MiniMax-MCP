@@ -572,6 +572,128 @@ def text_to_image(
         )
 
 @mcp.tool(
+    description="""Generate an image using a reference image and a text prompt (image-to-image generation).
+
+    This tool enables image-to-image editing where users provide a reference image and a text prompt
+    to generate a new image that incorporates elements from the reference image while following the prompt.
+    This is useful for maintaining consistent character appearance or style across multiple images.
+
+    COST WARNING: This tool makes an API call to Minimax which may incur costs. Only use when explicitly requested by the user.
+
+    Args:
+        prompt (str, required): Text description of the desired output image. Max length 1500 characters.
+            Example: "A woman in a red dress walking in a garden"
+        reference_image (str, required): The reference image to use for generation. Can be:
+            - A local file path (e.g., "/path/to/image.jpg")
+            - A URL (e.g., "https://example.com/image.jpg")
+            - A base64 data URL (e.g., "data:image/jpeg;base64,...")
+        model (str, optional): The model to use. Values: ["image-01"]. Defaults to "image-01".
+        aspect_ratio (str, optional): The aspect ratio of the output image.
+            Values: ["1:1", "16:9", "4:3", "3:2", "2:3", "3:4", "9:16", "21:9"]. Defaults to "1:1".
+        n (int, optional): The number of images to generate. Values: [1-9]. Defaults to 1.
+        prompt_optimizer (bool, optional): Whether to optimize the prompt. Defaults to True.
+        output_directory (str, optional): The directory to save the generated image(s) to.
+
+    Returns:
+        Text content with the path(s) to the output image file(s) or URLs depending on resource mode.
+    """
+)
+def image_to_image(
+    prompt: str = "",
+    reference_image: str = "",
+    model: str = DEFAULT_T2I_MODEL,
+    aspect_ratio: str = "1:1",
+    n: int = 1,
+    prompt_optimizer: bool = True,
+    output_directory: str = None,
+):
+    try:
+        if not prompt:
+            raise MinimaxRequestError("Prompt is required")
+        if not reference_image:
+            raise MinimaxRequestError("Reference image is required")
+
+        # Process reference image - convert local file to base64 data URL if needed
+        processed_image = reference_image
+        if not isinstance(reference_image, str):
+            raise MinimaxRequestError(f"Reference image must be a string, got {type(reference_image)}")
+
+        if not reference_image.startswith(("http://", "https://", "data:")):
+            # Local file path - convert to base64 data URL
+            if not os.path.exists(reference_image):
+                raise MinimaxRequestError(f"Reference image file does not exist: {reference_image}")
+            with open(reference_image, "rb") as f:
+                image_data = f.read()
+                # Detect image type from extension
+                ext = os.path.splitext(reference_image)[1].lower()
+                mime_type = "image/jpeg"  # default
+                if ext == ".png":
+                    mime_type = "image/png"
+                elif ext == ".gif":
+                    mime_type = "image/gif"
+                elif ext == ".webp":
+                    mime_type = "image/webp"
+                processed_image = f"data:{mime_type};base64,{base64.b64encode(image_data).decode('utf-8')}"
+
+        # Build payload with subject_reference
+        payload = {
+            "model": model,
+            "prompt": prompt,
+            "aspect_ratio": aspect_ratio,
+            "n": n,
+            "prompt_optimizer": prompt_optimizer,
+            "subject_reference": [
+                {
+                    "type": "character",
+                    "image_file": processed_image
+                }
+            ]
+        }
+
+        response_data = api_client.post("/v1/image_generation", json=payload)
+        image_urls = response_data.get("data", {}).get("image_urls", [])
+
+        if not image_urls:
+            raise MinimaxRequestError("No images generated")
+
+        if resource_mode == RESOURCE_MODE_URL:
+            return TextContent(
+                type="text",
+                text=f"Success. Image URLs: {image_urls}"
+            )
+
+        output_path = build_output_path(output_directory, base_path)
+        output_file_names = []
+
+        for i, image_url in enumerate(image_urls):
+            output_file_name = build_output_file("image", f"i2i_{i}_{prompt[:30]}", output_path, "jpg")
+            output_path.parent.mkdir(parents=True, exist_ok=True)
+
+            image_response = requests.get(image_url)
+            image_response.raise_for_status()
+
+            with open(output_file_name, 'wb') as f:
+                f.write(image_response.content)
+            output_file_names.append(output_file_name)
+
+        return TextContent(
+            type="text",
+            text=f"Success. Images saved as: {output_file_names}"
+        )
+
+    except MinimaxAPIError as e:
+        return TextContent(
+            type="text",
+            text=f"Failed to generate images: {str(e)}"
+        )
+    except (IOError, requests.RequestException) as e:
+        return TextContent(
+            type="text",
+            text=f"Failed to save images: {str(e)}"
+        )
+
+
+@mcp.tool(
     description="""Create a music generation task using AI models. Generate music from prompt and lyrics.
 
     COST WARNING: This tool makes an API call to Minimax which may incur costs. Only use when explicitly requested by the user.
@@ -580,14 +702,14 @@ def text_to_image(
         prompt (str): Music creation inspiration describing style, mood, scene, etc.
             Example: "Pop music, sad, suitable for rainy nights". Character range: [10, 300]
         lyrics (str): Song lyrics for music generation.
-            Use newline (\\n) to separate each line of lyrics. Supports lyric structure tags [Intro][Verse][Chorus][Bridge][Outro] 
+            Use newline (\\n) to separate each line of lyrics. Supports lyric structure tags [Intro][Verse][Chorus][Bridge][Outro]
             to enhance musicality. Character range: [10, 600] (each Chinese character, punctuation, and letter counts as 1 character)
         stream (bool, optional): Whether to enable streaming mode. Defaults to False
         sample_rate (int, optional): Sample rate of generated music. Values: [16000, 24000, 32000, 44100]
         bitrate (int, optional): Bitrate of generated music. Values: [32000, 64000, 128000, 256000]
         format (str, optional): Format of generated music. Values: ["mp3", "wav", "pcm"]. Defaults to "mp3"
         output_directory (str, optional): Directory to save the generated music file
-        
+
     Note: Currently supports generating music up to 1 minute in length.
 
     Returns:
