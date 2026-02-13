@@ -1,3 +1,5 @@
+[![AgentAudit: Safe](https://img.shields.io/badge/AgentAudit-Safe-green?style=flat-square)](https://www.agentaudit.dev/package/minimax-mcp)
+
 ![export](https://github.com/MiniMax-AI/MiniMax-01/raw/main/figures/MiniMaxLogo-Light.png)
 
 <div align="center" style="line-height: 1;">
