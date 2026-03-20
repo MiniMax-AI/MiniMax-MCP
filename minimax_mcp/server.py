@@ -572,6 +572,60 @@ def text_to_image(
         )
 
 @mcp.tool(
+    description="""Generate song lyrics from a description prompt using AI.
+
+    COST WARNING: This tool makes an API call to Minimax which may incur costs.
+    Only use when explicitly requested by the user.
+
+    Args:
+        prompt (str): Description of the song style, mood, theme, etc.
+            Example: "A melancholic ballad about rainy nights in the city"
+        type (int, optional): Generation type. 1 = generate full lyrics,
+            2 = edit/refine existing lyrics. Defaults to 1.
+        lyrics (str, optional): Existing lyrics to refine (required when type=2).
+
+    Returns:
+        Text content with the generated lyrics including structure tags.
+    """
+)
+def lyrics_generation(
+    prompt: str,
+    type: int = 1,
+    lyrics: str = None,
+) -> TextContent:
+    try:
+        if not prompt:
+            raise MinimaxRequestError("Prompt is required.")
+
+        payload = {
+            "model": DEFAULT_LYRICS_MODEL,
+            "prompt": prompt,
+            "type": type,
+        }
+        if lyrics is not None:
+            payload["lyrics"] = lyrics
+
+        response_data = api_client.post("/v1/lyrics_generation", json=payload)
+
+        data = response_data.get("data", {})
+        generated_lyrics = data.get("lyrics", "")
+
+        if not generated_lyrics:
+            raise MinimaxRequestError("No lyrics generated")
+
+        return TextContent(
+            type="text",
+            text=f"Success. Generated lyrics:\n{generated_lyrics}",
+        )
+
+    except MinimaxAPIError as e:
+        return TextContent(
+            type="text",
+            text=f"Failed to generate lyrics: {str(e)}"
+        )
+
+
+@mcp.tool(
     description="""Create a music generation task using AI models. Generate music from prompt and lyrics.
 
     COST WARNING: This tool makes an API call to Minimax which may incur costs. Only use when explicitly requested by the user.
