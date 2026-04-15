@@ -143,6 +143,15 @@ which uvx
 或者放到本地客户端的规则中 (以 Cursor 为例):
 <img src="https://public-cdn-video-data-algeng.oss-cn-wulanchabu.aliyuncs.com/cursor_video_rule.png?x-oss-process=image/resize,p_50/format,webp" style="display: inline-block; vertical-align: middle;"/>
 
+### 4. OpenCode 添加 MiniMax MCP 后启动失败（配置校验错误）
+如果 OpenCode 提示配置校验失败（例如 `mcp.MiniMax` 下字段不被识别），请检查：
+
+- 你的 OpenCode 版本对应的 MCP 配置 schema 是否与当前写法一致；
+- 是否按 OpenCode 官方文档将字段映射为该版本支持的结构（本 README 主要提供 Claude/Cursor 示例）；
+- 模型 provider 配置与 MCP server 配置是否分别放在各自的配置段中。
+
+建议先以 OpenCode 官方文档为准，再把 `MINIMAX_API_KEY`、`MINIMAX_API_HOST` 等环境变量填入其支持的 MCP 结构。
+
 
 ## 使用示例
 
