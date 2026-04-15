@@ -35,7 +35,14 @@
   Official MiniMax Model Context Protocol (MCP) server that enables interaction with powerful Text to Speech and video/image generation APIs. This server allows MCP clients like <a href="https://www.anthropic.com/claude">Claude Desktop</a>, <a href="https://www.cursor.so">Cursor</a>, <a href="https://codeium.com/windsurf">Windsurf</a>, <a href="https://github.com/openai/openai-agents-python">OpenAI Agents</a> and others to generate speech, clone voices, generate video, generate image and more.
 </p>
 
-> 💡 Recommended: **[MiniMax CLI (mmx-cli)](https://github.com/MiniMax-AI/cli)** — our official command-line tool with the latest models and additional features including text, vision, search, and music cover. Install via `npm install -g mmx-cli`.
+> 💡 Recommended: **[MiniMax CLI (mmx-cli)](https://github.com/MiniMax-AI/cli)** — our official command-line tool with the latest models and additional features including text, vision, search, and music cover.
+> ```bash
+> # For AI agents (Claude Code, Cursor, OpenClaw, etc.)
+> npx skills add MiniMax-AI/cli -y -g
+>
+> # Or install CLI globally for terminal use
+> npm install -g mmx-cli
+> ```
 
 ## Documentation
 - [中文文档](README-CN.md)
