@@ -104,6 +104,7 @@ We support two transport types: stdio and sse.
 |`generate_video`|Generate a video from a prompt|
 |`text_to_image`|Generate a image from a prompt|
 |`query_video_generation`|Query the result of video generation task|
+|`lyrics_generation`|Generate song lyrics from a description prompt|
 |`music_generation`|Generate a music track from a prompt and lyrics|
 |`voice_design`|Generate a voice from a prompt using preview text|
 
