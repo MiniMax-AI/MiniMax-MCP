@@ -6,9 +6,9 @@
           "minimax-mcp"
         ],
         "env": {
-          "MINIMAX_API_KEY": "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiYWRtaW4iOnRydWUsImlhdCI6MTc0NTM3NjU1N30.nrmwo6orXJfyf63IqJCK4LiUXrq9r9ZELCY530Mu6sLyx_qNAVsJ3Q828Rqy6pwoQl6VFMMFaJG3kc6aIMEfVLo7xlB-4NbwMxYKhwtxyQL8g_agYqw-1aY4zr3uvgTZxafXt1dEjcuS5i9O9SuOXXofeqb0jAnb_dssaLfgHNKlKthJpjsg8G76ZULS7KCpm6GvPWR4mwIdH-i0IhBU6CVSWpBAYKVNHJ-FVN_HzN5UgGvHkDbOOggg6Ib1illYbx6zkb7_JYZ7Tek1erjvJi7IG8Keh4NHq5kcyROWBetO9W8_2if_nfO6XBhlJRECpEmYBONwroGw0nH6xNblQw",
+          "MINIMAX_API_KEY": "insert-your-api-key-here",
           "MINIMAX_MCP_BASE_PATH": "~/Desktop",
-          "MINIMAX_API_HOST": "https://api.minimax.chat",
+          "MINIMAX_API_HOST": "https://api.minimax.io",
           "MINIMAX_API_RESOURCE_MODE": "url"
         }
       }
