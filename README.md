@@ -39,7 +39,7 @@
 - [中文文档](README-CN.md)
 - [MiniMax-MCP-JS](https://github.com/MiniMax-AI/MiniMax-MCP-JS) - Official JavaScript implementation of MiniMax MCP
 
-## Quickstart with MCP Client
+## Quickstart with MCP clients
 1. Get your API key from [MiniMax](https://www.minimax.io/platform/user-center/basic-information/interface-key). 
 2. Install `uv` (Python package manager), install with `curl -LsSf https://astral.sh/uv/install.sh | sh` or see the `uv` [repo](https://github.com/astral-sh/uv) for additional install methods.
 3. **Important**: The API host and key vary by region and must match; otherwise, you'll encounter an `Invalid API key` error.
@@ -49,6 +49,45 @@
 |MINIMAX_API_KEY| go get from [MiniMax Global](https://www.minimax.io/platform/user-center/basic-information/interface-key) | go get from [MiniMax](https://platform.minimaxi.com/user-center/basic-information/interface-key) |
 |MINIMAX_API_HOST| https://api.minimax.io | https://api.minimaxi.com |
 
+## MCP client setup matrix
+
+| Client | Where config lives | How MiniMax credentials are passed | Best for |
+|:--|:--|:--|:--|
+| Claude Desktop | `claude_desktop_config.json` in the standard Claude config directory | Put `MINIMAX_API_KEY` and `MINIMAX_API_HOST` in the `env` block | Fast desktop setup |
+| Cursor | Global `~/.cursor/mcp.json` or project `.cursor/mcp.json` | Put credentials in the `env` block or export them before Cursor starts | IDE workflows |
+| Claude Code | User/local `~/.claude.json` or project `.mcp.json` | Use `claude mcp add-json ...` with an `env` block, or export variables in your shell | CLI and agent workflows |
+| OpenAI Agents SDK | Your Python code | Pass env vars through `MCPServerStdio` params or the parent process environment | Python automation |
+| Other stdio hosts | Host-specific MCP settings UI or JSON file | Reuse the same `command` / `args` / `env` fields shown below | Windsurf, Cline, Roo Code, and similar hosts |
+
+## Auth flow and credential locations
+
+MiniMax-MCP uses environment variables for authentication. It does not run a separate OAuth flow.
+
+| What you need | Required | Where to store it |
+|:--|:--|:--|
+| `MINIMAX_API_KEY` | Yes | Your MCP host's config file `env` block, a shell environment variable, or a local `.env` file when running from source |
+| `MINIMAX_API_HOST` | Yes | Same location as `MINIMAX_API_KEY`; it must match the API key's region |
+| `MINIMAX_MCP_BASE_PATH` | Optional | Host config, shell env, or `.env`; used when saving local outputs |
+| `MINIMAX_API_RESOURCE_MODE` | Optional | Host config, shell env, or `.env`; use `url` for remote URLs or `local` to download files |
+
+Common credential locations:
+
+- Claude Desktop:
+  `~/Library/Application Support/Claude/claude_desktop_config.json` on macOS,
+  `%APPDATA%\\Claude\\claude_desktop_config.json` on Windows,
+  `~/.config/Claude/claude_desktop_config.json` on Linux.
+- Cursor:
+  `~/.cursor/mcp.json` for global servers, or `.cursor/mcp.json` in a project.
+- Claude Code:
+  `~/.claude.json` for user/local scope, or `.mcp.json` in the project root.
+- Direct source runs:
+  Start from [`.env.example`](.env.example) and save your credentials in a local `.env` file next to where you launch the server.
+
+`load_dotenv()` only helps when the launched process can see that `.env` file. If your MCP host starts `uvx minimax-mcp` from another working directory, prefer explicit `env` entries in the host config.
+
+## Example config snippets for common hosts
+
+Start from [mcp_server_config_demo.json](mcp_server_config_demo.json) if your host accepts the standard `mcpServers` JSON shape.
 
 ### Claude Desktop
 Go to `Claude > Settings > Developer > Edit Config > claude_desktop_config.json` to include the following:
@@ -81,7 +120,59 @@ If you're using Windows, you will have to enable "Developer Mode" in Claude Desk
 
 
 ### Cursor
-Go to `Cursor -> Preferences -> Cursor Settings -> MCP -> Add new global MCP Server` to add above config.
+Go to `Cursor -> Preferences -> Cursor Settings -> MCP` and paste the same `mcpServers` entry into your global or project config file.
+
+### Claude Code
+Use `claude mcp add-json` to register the server without editing JSON by hand:
+
+```sh
+claude mcp add-json MiniMax '{
+  "type": "stdio",
+  "command": "uvx",
+  "args": ["minimax-mcp"],
+  "env": {
+    "MINIMAX_API_KEY": "insert-your-api-key-here",
+    "MINIMAX_API_HOST": "https://api.minimax.io",
+    "MINIMAX_MCP_BASE_PATH": "/absolute/path/for-local-outputs",
+    "MINIMAX_API_RESOURCE_MODE": "url"
+  }
+}'
+```
+
+For Mainland China accounts, replace `MINIMAX_API_HOST` with `https://api.minimaxi.com`.
+
+### OpenAI Agents SDK
+If you want to use MiniMax-MCP from Python, launch it as a stdio server:
+
+```py
+import asyncio
+from agents import Agent, Runner
+from agents.mcp import MCPServerStdio
+
+
+async def main() -> None:
+    async with MCPServerStdio(
+        name="MiniMax",
+        params={
+            "command": "uvx",
+            "args": ["minimax-mcp"],
+            "env": {
+                "MINIMAX_API_KEY": "insert-your-api-key-here",
+                "MINIMAX_API_HOST": "https://api.minimax.io",
+                "MINIMAX_API_RESOURCE_MODE": "url",
+            },
+        },
+    ) as server:
+        agent = Agent(name="Assistant", mcp_servers=[server])
+        result = await Runner.run(agent, "List the voices I can use.")
+        print(result.final_output)
+
+
+asyncio.run(main())
+```
+
+### Other JSON-based MCP hosts
+Windsurf, Cline, Roo Code, and other hosts that accept the standard `mcpServers` JSON format can reuse the same `command`, `args`, and `env` fields shown in the Claude Desktop example above.
 
 That's it. Your MCP client can now interact with MiniMax through these tools:
 
@@ -93,17 +184,17 @@ We support two transport types: stdio and sse.
 | Communication through `stdout` | Communication through `network` |
 | Input: Supports processing `local files` or valid `URL` resources | Input: When deployed in the cloud, it is recommended to use `URL` for input |
 
-## Available Tools
-| tool  | description  |
-|-|-|
-|`text_to_audio`|Convert text to audio with a given voice|
-|`list_voices`|List all voices available|
-|`voice_clone`|Clone a voice using provided audio files|
-|`generate_video`|Generate a video from a prompt|
-|`text_to_image`|Generate a image from a prompt|
-|`query_video_generation`|Query the result of video generation task|
-|`music_generation`|Generate a music track from a prompt and lyrics|
-|`voice_design`|Generate a voice from a prompt using preview text|
+## Tool capability matrix
+
+| Capability | Tools | Input | Output | Notes |
+|:--|:--|:--|:--|:--|
+| Text-to-speech | `text_to_audio` | Text plus optional voice settings | Audio URL or local file | Best for direct TTS generation |
+| Voice discovery | `list_voices` | Optional voice type filter | Voice IDs and names | Read-only helper tool |
+| Voice cloning | `voice_clone` | Reference audio file or URL plus sample text | New voice ID and preview audio | First use of a cloned voice may incur costs |
+| Prompt-based voice design | `voice_design` | Voice prompt and preview text | Preview audio URL or local file | Good for quickly testing a new voice concept |
+| Image generation | `text_to_image` | Prompt | Image URL or local file | Synchronous generation |
+| Video generation | `generate_video`, `query_video_generation` | Prompt, model, duration, resolution | Task ID, then video URL or local file | Use async mode for long-running jobs |
+| Music generation | `music_generation` | Prompt and lyrics | Audio URL or local file | Can take longer than TTS |
 
 ## Release Notes
 
@@ -134,7 +225,13 @@ which uvx
 ```
 Once you obtain the absolute path (e.g., /usr/local/bin/uvx), update your configuration to use that path (e.g., "command": "/usr/local/bin/uvx"). 
 
-### 3. How to use `generate_video` in async-mode
+### 3. Long-running media generation tools
+- Prefer `generate_video(..., async_mode=True)` for video jobs that may outlive your client's normal tool timeout window.
+- Poll the task with `query_video_generation` until the task completes instead of waiting in a single tool call.
+- If you are just testing connectivity, set `MINIMAX_API_RESOURCE_MODE=url` first. Returning URLs avoids local file permission and disk-space issues.
+- If you use local outputs, set `MINIMAX_MCP_BASE_PATH` or pass an absolute `output_directory`. Relative paths require `MINIMAX_MCP_BASE_PATH` to be set.
+- If the client disconnects before the job is done, reconnect and continue polling with the saved `task_id`.
+
 Define completion rules before starting:
 <img src="https://public-cdn-video-data-algeng.oss-cn-wulanchabu.aliyuncs.com/cursor_rule2.png?x-oss-process=image/resize,p_50/format,webp" style="display: inline-block; vertical-align: middle;"/>
 Alternatively, these rules can be configured in your IDE settings (e.g., Cursor):

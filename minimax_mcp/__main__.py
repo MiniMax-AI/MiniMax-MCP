@@ -55,7 +55,7 @@ def generate_config(api_key: str | None = None):
                 "env": {
                     "MINIMAX_API_KEY": final_api_key,
                     "MINIMAX_MCP_BASE_PATH": "",
-                    "MINIMAX_API_HOST": "https://api.minimax.chat",
+                    "MINIMAX_API_HOST": "https://api.minimax.io",
                 },
             }
         }
