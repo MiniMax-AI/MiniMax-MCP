@@ -69,7 +69,8 @@
         "MINIMAX_API_KEY": "填写你的API密钥",
         "MINIMAX_MCP_BASE_PATH": "本地输出目录路径，如/User/xxx/Desktop",
         "MINIMAX_API_HOST": "填写API Host, https://api.minimaxi.com 或 https://api.minimax.io",
-        "MINIMAX_API_RESOURCE_MODE": "可选配置，资源生成后的提供方式, 可选项为 [url|local], 默认为 url"
+        "MINIMAX_API_RESOURCE_MODE": "可选配置，资源生成后的提供方式, 可选项为 [url|local], 默认为 url",
+        "MINIMAX_MUSIC_MODEL": "音乐生成模型 (默认: music-2.6)"
       }
     }
   }
