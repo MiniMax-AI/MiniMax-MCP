@@ -55,7 +55,8 @@
 ### Claude Desktop
 Go to `Claude > Settings > Developer > Edit Config > claude_desktop_config.json` to include the following:
 
-```
+**Option 1: Using environment variables (traditional)**
+```json
 {
   "mcpServers": {
     "MiniMax": {
@@ -73,8 +74,34 @@ Go to `Claude > Settings > Developer > Edit Config > claude_desktop_config.json`
     }
   }
 }
-
 ```
+
+**Option 2: Using CLI arguments (recommended for GitHub Copilot CLI)**
+```json
+{
+  "mcpServers": {
+    "MiniMax": {
+      "command": "uvx",
+      "args": [
+        "minimax-mcp",
+        "-y",
+        "--api-key=insert-your-api-key-here",
+        "--base-path=/User/xxx/Desktop",
+        "--api-host=https://api.minimax.io",
+        "--resource-mode=url"
+      ]
+    }
+  }
+}
+```
+
+**CLI Arguments:**
+- `--api-key`: MiniMax API key (overrides MINIMAX_API_KEY)
+- `--base-path`: Local output directory path (overrides MINIMAX_MCP_BASE_PATH)
+- `--api-host`: API host URL (overrides MINIMAX_API_HOST)
+- `--resource-mode`: Resource mode [url|local] (overrides MINIMAX_API_RESOURCE_MODE)
+
+CLI arguments take precedence over environment variables.
 ⚠️ Warning: The API key needs to match the host. If an error "API Error: invalid api key" occurs, please check your api host:
 - Global Host：`https://api.minimax.io`
 - Mainland Host：`https://api.minimaxi.com`

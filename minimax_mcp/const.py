@@ -28,3 +28,15 @@ RESOURCE_MODE_LOCAL = "local" # save resource to local file system
 RESOURCE_MODE_URL = "url" # provide resource url
 
 ENV_FASTMCP_LOG_LEVEL = "FASTMCP_LOG_LEVEL"
+
+# HTTP timeout (seconds)
+REQUEST_TIMEOUT = 30
+DOWNLOAD_TIMEOUT = 120
+
+# Valid parameter ranges
+VALID_SAMPLE_RATES = {8000, 16000, 22050, 24000, 32000, 44100}
+VALID_BITRATES = {32000, 64000, 128000, 256000}
+VALID_EMOTIONS = {"happy", "sad", "angry", "fearful", "disgusted", "surprised", "neutral"}
+VALID_AUDIO_FORMATS = {"pcm", "mp3", "flac"}
+VALID_CHANNELS = {1, 2}
+VALID_ASPECT_RATIOS = {"1:1", "16:9", "4:3", "3:2", "2:3", "3:4", "9:16", "21:9"}
