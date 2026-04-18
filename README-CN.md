@@ -37,6 +37,8 @@
   MiniMax官方模型上下文协议(MCP)服务器，支持与强大的文本转语音和视频/图像生成API交互。允许MCP客户端如<a href="https://www.anthropic.com/claude">Claude Desktop</a>、<a href="https://www.cursor.so">Cursor</a>、<a href="https://codeium.com/windsurf">Windsurf</a>、<a href="https://github.com/openai/openai-agents-python">OpenAI Agents</a>等生成语音、克隆声音、生成视频、生成图像等功能。
 </p>
 
+> 💡 推荐优先使用 **[MiniMax CLI (mmx-cli)](https://github.com/MiniMax-AI/cli)** — MiniMax 官方命令行工具，支持最新模型及更多功能（文本对话、图片理解、搜索、音乐翻唱等），支持作为 Claude Code、Cursor、OpenClaw 等 AI Agent 的技能接入。
+
 ## Documentation
 - [English Documentation](README.md)
 - [MiniMax-MCP-JS](https://github.com/MiniMax-AI/MiniMax-MCP-JS) - MiniMax MCP的官方JavaScript版本
