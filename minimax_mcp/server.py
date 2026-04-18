@@ -32,21 +32,25 @@ from minimax_mcp.exceptions import MinimaxAPIError, MinimaxRequestError
 from minimax_mcp.client import MinimaxAPIClient
 
 # Parse CLI arguments
-cli_args = {}
-args = sys.argv[1:]
-for i in range(len(args)):
-    if args[i].startswith('--'):
-        key_value = args[i][2:].split('=', 1)
-        if len(key_value) == 2:
-            cli_args[key_value[0]] = key_value[1]
-        elif i + 1 < len(args) and not args[i + 1].startswith('--'):
-            cli_args[key_value[0]] = args[i + 1]
+import argparse as _argparse
+
+def _parse_cli_args():
+    parser = _argparse.ArgumentParser(description="MiniMax MCP Server")
+    parser.add_argument("--api-key", help="MiniMax API key")
+    parser.add_argument("--base-path", help="Output base path")
+    parser.add_argument("--api-host", help="API host URL")
+    parser.add_argument("--resource-mode", choices=["url", "local"], help="Resource mode")
+    parser.add_argument("--log-level", help="Log level")
+    args, _ = parser.parse_known_args()
+    return {k: v for k, v in vars(args).items() if v is not None}
+
+cli_args = _parse_cli_args()
 
 def get_config(cli_key: str, env_key: str, default: str = None) -> str:
     """Get config value with CLI args taking precedence over env vars."""
     return cli_args.get(cli_key) or os.getenv(env_key) or default
 
-def _validate_audio_params(speed=None, vol=None, pitch=None, sample_rate=None, bitrate=None, channel=None, format=None, n=None, aspect_ratio=None):
+def _validate_audio_params(speed=None, vol=None, pitch=None, sample_rate=None, bitrate=None, channel=None, audio_format=None, n=None, aspect_ratio=None):
     """Validate numeric parameters against documented ranges."""
     if speed is not None and not (0.5 <= speed <= 2.0):
         raise MinimaxRequestError(f"speed must be between 0.5 and 2.0, got {speed}")
@@ -60,19 +64,19 @@ def _validate_audio_params(speed=None, vol=None, pitch=None, sample_rate=None, b
         raise MinimaxRequestError(f"bitrate must be one of {VALID_BITRATES}, got {bitrate}")
     if channel is not None and channel not in VALID_CHANNELS:
         raise MinimaxRequestError(f"channel must be one of {VALID_CHANNELS}, got {channel}")
-    if format is not None and format not in VALID_AUDIO_FORMATS:
-        raise MinimaxRequestError(f"format must be one of {VALID_AUDIO_FORMATS}, got {format}")
+    if audio_format is not None and audio_format not in VALID_AUDIO_FORMATS:
+        raise MinimaxRequestError(f"audio_format must be one of {VALID_AUDIO_FORMATS}, got {audio_format}")
     if n is not None and not (1 <= n <= 9):
         raise MinimaxRequestError(f"n must be between 1 and 9, got {n}")
     if aspect_ratio is not None and aspect_ratio not in VALID_ASPECT_RATIOS:
         raise MinimaxRequestError(f"aspect_ratio must be one of {VALID_ASPECT_RATIOS}, got {aspect_ratio}")
 
 load_dotenv()
-api_key = get_config('api-key', ENV_MINIMAX_API_KEY)
-base_path = get_config('base-path', ENV_MINIMAX_MCP_BASE_PATH, '~/Desktop')
-api_host = get_config('api-host', ENV_MINIMAX_API_HOST)
-resource_mode = get_config('resource-mode', ENV_RESOURCE_MODE, RESOURCE_MODE_URL)
-fastmcp_log_level = get_config('log-level', ENV_FASTMCP_LOG_LEVEL, 'WARNING')
+api_key = get_config('api_key', ENV_MINIMAX_API_KEY)
+base_path = get_config('base_path', ENV_MINIMAX_MCP_BASE_PATH, '~/Desktop')
+api_host = get_config('api_host', ENV_MINIMAX_API_HOST)
+resource_mode = get_config('resource_mode', ENV_RESOURCE_MODE, RESOURCE_MODE_URL)
+fastmcp_log_level = get_config('log_level', ENV_FASTMCP_LOG_LEVEL, 'WARNING')
 
 if not api_key:
     raise ValueError("MINIMAX_API_KEY environment variable is required")
@@ -121,13 +125,13 @@ def text_to_audio(
     sample_rate: int = DEFAULT_SAMPLE_RATE,
     bitrate: int = DEFAULT_BITRATE,
     channel: int = DEFAULT_CHANNEL,
-    format: str = DEFAULT_FORMAT,
+    audio_format: str = DEFAULT_FORMAT,
     language_boost: str = DEFAULT_LANGUAGE_BOOST,
 ):
     if not text:
         raise MinimaxRequestError("Text is required.")
 
-    _validate_audio_params(speed=speed, vol=vol, pitch=pitch, sample_rate=sample_rate, bitrate=bitrate, channel=channel, format=format)
+    _validate_audio_params(speed=speed, vol=vol, pitch=pitch, sample_rate=sample_rate, bitrate=bitrate, channel=channel, audio_format=audio_format)
 
     payload = {
         "model": model,
@@ -142,7 +146,7 @@ def text_to_audio(
         "audio_setting": {
             "sample_rate": sample_rate,
             "bitrate": bitrate,
-            "format": format,
+            "format": audio_format,
             "channel": channel
         },
         "language_boost": language_boost
@@ -165,7 +169,7 @@ def text_to_audio(
 
         # save audio to file
         output_path = build_output_path(output_directory, base_path)
-        output_file_name = build_output_file("t2a", text, output_path, format)
+        output_file_name = build_output_file("t2a", text, output_path, audio_format)
         
         with open(output_file_name, "wb") as f:
             f.write(audio_bytes)
@@ -637,7 +641,7 @@ def music_generation(
     lyrics: str,
     sample_rate: int = DEFAULT_SAMPLE_RATE,
     bitrate: int = DEFAULT_BITRATE,
-    format: str = DEFAULT_FORMAT,
+    audio_format: str = DEFAULT_FORMAT,
     output_directory: str = None
 ) -> TextContent:
     try:
@@ -647,7 +651,7 @@ def music_generation(
         if not lyrics:
             raise MinimaxRequestError("Lyrics is required.")
         
-        _validate_audio_params(sample_rate=sample_rate, bitrate=bitrate, format=format)
+        _validate_audio_params(sample_rate=sample_rate, bitrate=bitrate, audio_format=audio_format)
 
         # Build request payload
         payload = {
@@ -657,7 +661,7 @@ def music_generation(
             "audio_setting": {
                 "sample_rate": sample_rate,
                 "bitrate": bitrate,
-                "format": format
+                "format": audio_format
             },
         }
         if resource_mode == RESOURCE_MODE_URL:
@@ -677,7 +681,7 @@ def music_generation(
             )
 
         output_path = build_output_path(output_directory, base_path)
-        output_file_name = build_output_file("music", f"{prompt}", output_path, format)
+        output_file_name = build_output_file("music", f"{prompt}", output_path, audio_format)
         output_path.mkdir(parents=True, exist_ok=True)
 
         # hex->bytes
