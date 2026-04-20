@@ -105,6 +105,7 @@
 |`voice_clone`|根据指定音频文件克隆音色|
 |`generate_video`|根据指定 prompt 生成视频|
 |`text_to_image`|根据指定 prompt 生成图片|
+|`query_video_generation`|查询视频生成任务结果|
 |`music_generation`|根据指定 prompt 和歌词生成音乐|
 |`voice_design`|根据指定 prompt 生成音色和试听文本|
 
