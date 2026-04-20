@@ -287,7 +287,8 @@ def play_audio(input_file_path: str, is_url: bool = False) -> TextContent:
         return TextContent(type="text", text=f"Successfully played audio file: {input_file_path}")
     else:
         file_path = process_input_file(input_file_path)
-        play(open(file_path, "rb").read())
+        with open(file_path, "rb") as f:
+            play(f.read())
         return TextContent(type="text", text=f"Successfully played audio file: {file_path}")
 
 
