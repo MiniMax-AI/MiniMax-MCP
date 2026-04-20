@@ -12,6 +12,7 @@ Note: Tools without cost warnings are free to use as they only read existing dat
 """
 
 import os
+import sys
 import base64
 import requests
 import time
@@ -30,12 +31,52 @@ from minimax_mcp.const import *
 from minimax_mcp.exceptions import MinimaxAPIError, MinimaxRequestError
 from minimax_mcp.client import MinimaxAPIClient
 
+# Parse CLI arguments
+import argparse as _argparse
+
+def _parse_cli_args():
+    parser = _argparse.ArgumentParser(description="MiniMax MCP Server")
+    parser.add_argument("--api-key", help="MiniMax API key")
+    parser.add_argument("--base-path", help="Output base path")
+    parser.add_argument("--api-host", help="API host URL")
+    parser.add_argument("--resource-mode", choices=["url", "local"], help="Resource mode")
+    parser.add_argument("--log-level", help="Log level")
+    args, _ = parser.parse_known_args()
+    return {k: v for k, v in vars(args).items() if v is not None}
+
+cli_args = _parse_cli_args()
+
+def get_config(cli_key: str, env_key: str, default: str = None) -> str:
+    """Get config value with CLI args taking precedence over env vars."""
+    return cli_args.get(cli_key) or os.getenv(env_key) or default
+
+def _validate_audio_params(speed=None, vol=None, pitch=None, sample_rate=None, bitrate=None, channel=None, audio_format=None, n=None, aspect_ratio=None):
+    """Validate numeric parameters against documented ranges."""
+    if speed is not None and not (0.5 <= speed <= 2.0):
+        raise MinimaxRequestError(f"speed must be between 0.5 and 2.0, got {speed}")
+    if vol is not None and not (0 <= vol <= 10):
+        raise MinimaxRequestError(f"vol must be between 0 and 10, got {vol}")
+    if pitch is not None and not (-12 <= pitch <= 12):
+        raise MinimaxRequestError(f"pitch must be between -12 and 12, got {pitch}")
+    if sample_rate is not None and sample_rate not in VALID_SAMPLE_RATES:
+        raise MinimaxRequestError(f"sample_rate must be one of {VALID_SAMPLE_RATES}, got {sample_rate}")
+    if bitrate is not None and bitrate not in VALID_BITRATES:
+        raise MinimaxRequestError(f"bitrate must be one of {VALID_BITRATES}, got {bitrate}")
+    if channel is not None and channel not in VALID_CHANNELS:
+        raise MinimaxRequestError(f"channel must be one of {VALID_CHANNELS}, got {channel}")
+    if audio_format is not None and audio_format not in VALID_AUDIO_FORMATS:
+        raise MinimaxRequestError(f"audio_format must be one of {VALID_AUDIO_FORMATS}, got {audio_format}")
+    if n is not None and not (1 <= n <= 9):
+        raise MinimaxRequestError(f"n must be between 1 and 9, got {n}")
+    if aspect_ratio is not None and aspect_ratio not in VALID_ASPECT_RATIOS:
+        raise MinimaxRequestError(f"aspect_ratio must be one of {VALID_ASPECT_RATIOS}, got {aspect_ratio}")
+
 load_dotenv()
-api_key = os.getenv(ENV_MINIMAX_API_KEY)
-base_path = os.getenv(ENV_MINIMAX_MCP_BASE_PATH) or "~/Desktop"
-api_host = os.getenv(ENV_MINIMAX_API_HOST)
-resource_mode = os.getenv(ENV_RESOURCE_MODE) or RESOURCE_MODE_URL
-fastmcp_log_level = os.getenv(ENV_FASTMCP_LOG_LEVEL) or "WARNING"
+api_key = get_config('api_key', ENV_MINIMAX_API_KEY)
+base_path = get_config('base_path', ENV_MINIMAX_MCP_BASE_PATH, '~/Desktop')
+api_host = get_config('api_host', ENV_MINIMAX_API_HOST)
+resource_mode = get_config('resource_mode', ENV_RESOURCE_MODE, RESOURCE_MODE_URL)
+fastmcp_log_level = get_config('log_level', ENV_FASTMCP_LOG_LEVEL, 'WARNING')
 
 if not api_key:
     raise ValueError("MINIMAX_API_KEY environment variable is required")
@@ -84,11 +125,13 @@ def text_to_audio(
     sample_rate: int = DEFAULT_SAMPLE_RATE,
     bitrate: int = DEFAULT_BITRATE,
     channel: int = DEFAULT_CHANNEL,
-    format: str = DEFAULT_FORMAT,
+    audio_format: str = DEFAULT_FORMAT,
     language_boost: str = DEFAULT_LANGUAGE_BOOST,
 ):
     if not text:
         raise MinimaxRequestError("Text is required.")
+
+    _validate_audio_params(speed=speed, vol=vol, pitch=pitch, sample_rate=sample_rate, bitrate=bitrate, channel=channel, audio_format=audio_format)
 
     payload = {
         "model": model,
@@ -103,7 +146,7 @@ def text_to_audio(
         "audio_setting": {
             "sample_rate": sample_rate,
             "bitrate": bitrate,
-            "format": format,
+            "format": audio_format,
             "channel": channel
         },
         "language_boost": language_boost
@@ -126,15 +169,14 @@ def text_to_audio(
 
         # save audio to file
         output_path = build_output_path(output_directory, base_path)
-        output_file_name = build_output_file("t2a", text, output_path, format)
-        output_path.parent.mkdir(parents=True, exist_ok=True)
+        output_file_name = build_output_file("t2a", text, output_path, audio_format)
         
-        with open(output_path / output_file_name, "wb") as f:
+        with open(output_file_name, "wb") as f:
             f.write(audio_bytes)
 
         return TextContent(
             type="text",
-            text=f"Success. File saved as: {output_path / output_file_name}. Voice used: {voice_id}",
+            text=f"Success. File saved as: {output_file_name}. Voice used: {voice_id}",
         )
         
     except MinimaxAPIError as e:
@@ -207,7 +249,7 @@ def voice_clone(
         # step1: upload file
         if is_url:
             # download file from url
-            response = requests.get(file, stream=True)
+            response = requests.get(file, stream=True, timeout=DOWNLOAD_TIMEOUT)
             response.raise_for_status()
             files = {'file': ('audio_file.mp3', response.raw, 'audio/mpeg')}
             data = {'purpose': 'voice_clone'}
@@ -249,14 +291,13 @@ def voice_clone(
         # step3: download demo audio
         output_path = build_output_path(output_directory, base_path)
         output_file_name = build_output_file("voice_clone", text, output_path, "wav")
-        output_path.parent.mkdir(parents=True, exist_ok=True)
         
-        with open(output_path / output_file_name, "wb") as f:
-            f.write(requests.get(response_data.get("demo_audio")).content)
+        with open(output_file_name, "wb") as f:
+            f.write(requests.get(response_data.get("demo_audio"), timeout=DOWNLOAD_TIMEOUT).content)
 
         return TextContent(
             type="text",
-            text=f"Voice cloned successfully: Voice ID: {voice_id}, demo audio saved as: {output_path / output_file_name}"
+            text=f"Voice cloned successfully: Voice ID: {voice_id}, demo audio saved as: {output_file_name}"
         )
         
     except MinimaxAPIError as e:
@@ -283,12 +324,14 @@ def voice_clone(
 )
 def play_audio(input_file_path: str, is_url: bool = False) -> TextContent:
     if is_url:
-        play(requests.get(input_file_path).content)
-        return TextContent(type="text", text=f"Successfully played audio file: {input_file_path}")
+        response = requests.get(input_file_path, timeout=DOWNLOAD_TIMEOUT)
+        response.raise_for_status()
+        play(response.content)
     else:
         file_path = process_input_file(input_file_path)
-        play(open(file_path, "rb").read())
-        return TextContent(type="text", text=f"Successfully played audio file: {file_path}")
+        with open(file_path, "rb") as f:
+            play(f.read())
+    return TextContent(type="text", text=f"Successfully played audio file: {input_file_path}")
 
 
 @mcp.tool(
@@ -406,17 +449,16 @@ def generate_video(
         # step4: download and save video
         output_path = build_output_path(output_directory, base_path)
         output_file_name = build_output_file("video", task_id, output_path, "mp4", True)
-        output_path.parent.mkdir(parents=True, exist_ok=True)
 
-        video_response = requests.get(download_url)
+        video_response = requests.get(download_url, timeout=DOWNLOAD_TIMEOUT)
         video_response.raise_for_status()
         
-        with open(output_path / output_file_name, "wb") as f:
+        with open(output_file_name, "wb") as f:
             f.write(video_response.content)
 
         return TextContent(
             type="text",
-            text=f"Success. Video saved as: {output_path / output_file_name}"
+            text=f"Success. Video saved as: {output_file_name}"
         )
 
     except MinimaxAPIError as e:
@@ -476,17 +518,16 @@ def query_video_generation(task_id: str, output_directory: str = None) -> TextCo
             )
         output_path = build_output_path(output_directory, base_path)
         output_file_name = build_output_file("video", task_id, output_path, "mp4", True)
-        output_path.parent.mkdir(parents=True, exist_ok=True)
 
-        video_response = requests.get(download_url)
+        video_response = requests.get(download_url, timeout=DOWNLOAD_TIMEOUT)
         video_response.raise_for_status()
 
-        with open(output_path / output_file_name, "wb") as f:
+        with open(output_file_name, "wb") as f:
             f.write(video_response.content)
 
         return TextContent(
             type="text",
-            text=f"Success. Video saved as: {output_path / output_file_name}"
+            text=f"Success. Video saved as: {output_file_name}"
         )
     except MinimaxAPIError as e:
         return TextContent(
@@ -523,6 +564,8 @@ def text_to_image(
         if not prompt:
             raise MinimaxRequestError("Prompt is required")
 
+        _validate_audio_params(n=n, aspect_ratio=aspect_ratio)
+
         payload = {
             "model": model, 
             "prompt": prompt,
@@ -546,9 +589,8 @@ def text_to_image(
         
         for i, image_url in enumerate(image_urls):
             output_file_name = build_output_file("image", f"{i}_{prompt}", output_path, "jpg")
-            output_path.parent.mkdir(parents=True, exist_ok=True)
             
-            image_response = requests.get(image_url)
+            image_response = requests.get(image_url, timeout=DOWNLOAD_TIMEOUT)
             image_response.raise_for_status()
             
             with open(output_file_name, 'wb') as f:
@@ -599,68 +641,70 @@ def music_generation(
     lyrics: str,
     sample_rate: int = DEFAULT_SAMPLE_RATE,
     bitrate: int = DEFAULT_BITRATE,
-    format: str = DEFAULT_FORMAT,
+    audio_format: str = DEFAULT_FORMAT,
     output_directory: str = None
 ) -> TextContent:
-        try:
-            # prompt and lyrics params check
-            if not prompt:
-                raise MinimaxRequestError("Prompt is required.")
-            if not lyrics:
-                raise MinimaxRequestError("Lyrics is required.")
-            
-            # Build request payload
-            payload = {
-                "model": DEFAULT_MUSIC_MODEL,
-                "prompt": prompt,
-                "lyrics": lyrics,
-                "audio_setting": {
-                    "sample_rate": sample_rate,
-                    "bitrate": bitrate,
-                    "format": format
-                },
-            }
-            if resource_mode == RESOURCE_MODE_URL:
-                payload["output_format"] = "url"
-
-            # Call music generation API
-            response_data = api_client.post("/v1/music_generation", json=payload)
-                    
-            # Handle response
-            data = response_data.get('data', {})
-            audio_hex = data.get('audio', '')
-
-            if resource_mode == RESOURCE_MODE_URL:
-                return TextContent(
-                    type="text",
-                    text=f"Success. Music url: {audio_hex}"
-                )
-
-            output_path = build_output_path(output_directory, base_path)
-            output_file_name = build_output_file("music", f"{prompt}", output_path, format)
-            output_path.parent.mkdir(parents=True, exist_ok=True)
-
-            # hex->bytes
-            audio_bytes = bytes.fromhex(audio_hex)
-
-            # save audio to file
-            with open(output_path / output_file_name, "wb") as f:
-                f.write(audio_bytes)
-
-            return TextContent(
-                type="text",
-                text=f"Success. Music saved as: {output_path / output_file_name}"
-            )
+    try:
+        # prompt and lyrics params check
+        if not prompt:
+            raise MinimaxRequestError("Prompt is required.")
+        if not lyrics:
+            raise MinimaxRequestError("Lyrics is required.")
         
-        except MinimaxAPIError as e:
+        _validate_audio_params(sample_rate=sample_rate, bitrate=bitrate, audio_format=audio_format)
+
+        # Build request payload
+        payload = {
+            "model": DEFAULT_MUSIC_MODEL,
+            "prompt": prompt,
+            "lyrics": lyrics,
+            "audio_setting": {
+                "sample_rate": sample_rate,
+                "bitrate": bitrate,
+                "format": audio_format
+            },
+        }
+        if resource_mode == RESOURCE_MODE_URL:
+            payload["output_format"] = "url"
+
+        # Call music generation API
+        response_data = api_client.post("/v1/music_generation", json=payload)
+                
+        # Handle response
+        data = response_data.get('data', {})
+        audio_hex = data.get('audio', '')
+
+        if resource_mode == RESOURCE_MODE_URL:
             return TextContent(
                 type="text",
-                text=f"Failed to generate music: {str(e)}"
+                text=f"Success. Music url: {audio_hex}"
             )
-        except (IOError, requests.RequestException) as e:
-            return TextContent(
-                type="text",
-                text=f"Failed to save music: {str(e)}"
+
+        output_path = build_output_path(output_directory, base_path)
+        output_file_name = build_output_file("music", f"{prompt}", output_path, audio_format)
+        output_path.mkdir(parents=True, exist_ok=True)
+
+        # hex->bytes
+        audio_bytes = bytes.fromhex(audio_hex)
+
+        # save audio to file
+        with open(output_file_name, "wb") as f:
+            f.write(audio_bytes)
+
+        return TextContent(
+            type="text",
+            text=f"Success. Music saved as: {output_file_name}"
+        )
+    
+    except MinimaxAPIError as e:
+        return TextContent(
+            type="text",
+            text=f"Failed to generate music: {str(e)}"
+        )
+    except (IOError, requests.RequestException) as e:
+        return TextContent(
+            type="text",
+            text=f"Failed to save music: {str(e)}"
         )
 
 @mcp.tool(
@@ -720,14 +764,13 @@ def voice_design(
         # save audio to file
         output_path = build_output_path(output_directory, base_path)
         output_file_name = build_output_file("voice_design", preview_text, output_path, "mp3")
-        output_path.parent.mkdir(parents=True, exist_ok=True)
         
-        with open(output_path / output_file_name, "wb") as f:
+        with open(output_file_name, "wb") as f:
             f.write(audio_bytes)
 
         return TextContent(
             type="text",
-            text=f"Success. File saved as: {output_path / output_file_name}. Voice ID generated: {generated_voice_id}",
+            text=f"Success. File saved as: {output_file_name}. Voice ID generated: {generated_voice_id}",
         )
         
     except MinimaxAPIError as e:

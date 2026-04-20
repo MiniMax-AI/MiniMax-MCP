@@ -13,3 +13,8 @@ dist/
 minimax_mcp.egg-info/
 .coverage
 coverage.xml
+
+# AI agents & copilot
+AGENTS.md
+.github/copilot-instructions.md
+.github/copilot*.md

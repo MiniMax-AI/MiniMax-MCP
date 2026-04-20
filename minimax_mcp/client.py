@@ -53,6 +53,8 @@ class MinimaxAPIClient:
             # requests library will set it automatically with the correct boundary
             self.session.headers.pop('Content-Type', None)
         
+        from minimax_mcp.const import REQUEST_TIMEOUT
+        kwargs.setdefault('timeout', REQUEST_TIMEOUT)
         try:
             response = self.session.request(method, url, **kwargs)
             
