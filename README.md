@@ -142,6 +142,21 @@ Define completion rules before starting:
 Alternatively, these rules can be configured in your IDE settings (e.g., Cursor):
 <img src="https://public-cdn-video-data-algeng.oss-cn-wulanchabu.aliyuncs.com/cursor_video_rule.png?x-oss-process=image/resize,p_50/format,webp" style="display: inline-block; vertical-align: middle;"/>
 
+### 4. OpenCode fails to start after adding MiniMax MCP config
+If OpenCode reports config validation errors (for example, unrecognized keys in `mcp.MiniMax`), verify:
+
+- OpenCode's MCP schema/version matches the config format you are using.
+- You translated fields according to OpenCode docs (this README primarily provides Claude/Cursor examples).
+- Model provider settings and MCP server settings are configured in their respective sections.
+
+For OpenCode-specific keys and structure, follow the latest OpenCode documentation first, then map MiniMax env vars (`MINIMAX_API_KEY`, `MINIMAX_API_HOST`) into that schema.
+
+### 5. Does MiniMax MCP support standard MCP OAuth discovery endpoints?
+This repository (`MiniMax-MCP`) is an MCP server implementation that is typically configured with API key environment variables.  
+OAuth discovery/login support for adding third-party MCP services depends on the MCP client product (for example, web apps/IDE integrations), not only on this server repository.
+
+If your client reports OAuth URL discovery errors when connecting to a custom MCP endpoint, verify client-side OAuth support and required discovery paths in that client's latest documentation.
+
 
 ## Example usage
 

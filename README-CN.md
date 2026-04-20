@@ -143,6 +143,21 @@ which uvx
 或者放到本地客户端的规则中 (以 Cursor 为例):
 <img src="https://public-cdn-video-data-algeng.oss-cn-wulanchabu.aliyuncs.com/cursor_video_rule.png?x-oss-process=image/resize,p_50/format,webp" style="display: inline-block; vertical-align: middle;"/>
 
+### 4. OpenCode 添加 MiniMax MCP 后启动失败（配置校验错误）
+如果 OpenCode 提示配置校验失败（例如 `mcp.MiniMax` 下字段不被识别），请检查：
+
+- 你的 OpenCode 版本对应的 MCP 配置 schema 是否与当前写法一致；
+- 是否按 OpenCode 官方文档将字段映射为该版本支持的结构（本 README 主要提供 Claude/Cursor 示例）；
+- 模型 provider 配置与 MCP server 配置是否分别放在各自的配置段中。
+
+建议先以 OpenCode 官方文档为准，再把 `MINIMAX_API_KEY`、`MINIMAX_API_HOST` 等环境变量填入其支持的 MCP 结构。
+
+### 5. MiniMax MCP 是否支持标准 MCP OAuth discovery？
+本仓库（`MiniMax-MCP`）主要是 MCP Server 实现，常见接入方式是通过 API Key 环境变量配置。  
+“添加第三方 MCP 服务时的 OAuth 发现/授权流程”是否可用，取决于具体 MCP 客户端产品（如网页端/IDE 集成）的实现能力，而不只取决于本仓库。
+
+如果你在接入自定义 MCP URL 时遇到 OAuth URL 获取失败，请优先核对对应客户端最新文档中要求的 discovery 地址与 OAuth 配置方式。
+
 
 ## 使用示例
 
