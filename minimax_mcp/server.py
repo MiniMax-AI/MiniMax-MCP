@@ -17,7 +17,7 @@ import requests
 import time
 from dotenv import load_dotenv
 from mcp.server.fastmcp import FastMCP
-from mcp.types import TextContent
+from mcp.types import TextContent, ToolAnnotations
 from minimax_mcp.utils import (
     build_output_path,
     build_output_file,
@@ -47,6 +47,12 @@ api_client = MinimaxAPIClient(api_key, api_host)
 
 
 @mcp.tool(
+    annotations=ToolAnnotations(
+        title="Text to Audio",
+        readOnlyHint=False,
+        destructiveHint=False,
+        openWorldHint=True,
+    ),
     description="""Convert text to audio with a given voice and save the output audio file to a given directory.
     Directory is optional, if not provided, the output file will be saved to $HOME/Desktop.
     Voice id is optional, if not provided, the default voice will be used.
@@ -145,6 +151,11 @@ def text_to_audio(
 
 
 @mcp.tool(
+    annotations=ToolAnnotations(
+        title="List Voices",
+        readOnlyHint=True,
+        openWorldHint=True,
+    ),
     description="""List all voices available.
 
     Args:
@@ -182,6 +193,12 @@ def list_voices(
 
 
 @mcp.tool(
+    annotations=ToolAnnotations(
+        title="Voice Clone",
+        readOnlyHint=False,
+        destructiveHint=False,
+        openWorldHint=True,
+    ),
     description="""Clone a voice using provided audio files. The new voice will be charged upon first use.
 
     COST WARNING: This tool makes an API call to Minimax which may incur costs. Only use when explicitly requested by the user.
@@ -272,6 +289,11 @@ def voice_clone(
 
 
 @mcp.tool(
+    annotations=ToolAnnotations(
+        title="Play Audio",
+        readOnlyHint=True,
+        openWorldHint=False,
+    ),
     description="""Play an audio file. Supports WAV and MP3 formats. Not supports video.
 
      Args:
@@ -292,6 +314,12 @@ def play_audio(input_file_path: str, is_url: bool = False) -> TextContent:
 
 
 @mcp.tool(
+    annotations=ToolAnnotations(
+        title="Generate Video",
+        readOnlyHint=False,
+        destructiveHint=False,
+        openWorldHint=True,
+    ),
     description="""Generate a video from a prompt.
 
     COST WARNING: This tool makes an API call to Minimax which may incur costs. Only use when explicitly requested by the user.
@@ -437,6 +465,11 @@ def generate_video(
 
 
 @mcp.tool(
+    annotations=ToolAnnotations(
+        title="Query Video Generation",
+        readOnlyHint=True,
+        openWorldHint=True,
+    ),
     description="""Query the status of a video generation task.
 
     Args:
@@ -496,6 +529,12 @@ def query_video_generation(task_id: str, output_directory: str = None) -> TextCo
 
 
 @mcp.tool(
+    annotations=ToolAnnotations(
+        title="Text to Image",
+        readOnlyHint=False,
+        destructiveHint=False,
+        openWorldHint=True,
+    ),
     description="""Generate a image from a prompt.
 
     COST WARNING: This tool makes an API call to Minimax which may incur costs. Only use when explicitly requested by the user.
@@ -572,6 +611,12 @@ def text_to_image(
         )
 
 @mcp.tool(
+    annotations=ToolAnnotations(
+        title="Music Generation",
+        readOnlyHint=False,
+        destructiveHint=False,
+        openWorldHint=True,
+    ),
     description="""Create a music generation task using AI models. Generate music from prompt and lyrics.
 
     COST WARNING: This tool makes an API call to Minimax which may incur costs. Only use when explicitly requested by the user.
@@ -580,14 +625,14 @@ def text_to_image(
         prompt (str): Music creation inspiration describing style, mood, scene, etc.
             Example: "Pop music, sad, suitable for rainy nights". Character range: [10, 300]
         lyrics (str): Song lyrics for music generation.
-            Use newline (\\n) to separate each line of lyrics. Supports lyric structure tags [Intro][Verse][Chorus][Bridge][Outro] 
+            Use newline (\\n) to separate each line of lyrics. Supports lyric structure tags [Intro][Verse][Chorus][Bridge][Outro]
             to enhance musicality. Character range: [10, 600] (each Chinese character, punctuation, and letter counts as 1 character)
         stream (bool, optional): Whether to enable streaming mode. Defaults to False
         sample_rate (int, optional): Sample rate of generated music. Values: [16000, 24000, 32000, 44100]
         bitrate (int, optional): Bitrate of generated music. Values: [32000, 64000, 128000, 256000]
         format (str, optional): Format of generated music. Values: ["mp3", "wav", "pcm"]. Defaults to "mp3"
         output_directory (str, optional): Directory to save the generated music file
-        
+
     Note: Currently supports generating music up to 1 minute in length.
 
     Returns:
@@ -664,6 +709,12 @@ def music_generation(
         )
 
 @mcp.tool(
+    annotations=ToolAnnotations(
+        title="Voice Design",
+        readOnlyHint=False,
+        destructiveHint=False,
+        openWorldHint=True,
+    ),
     description="""Generate a voice based on description prompts.
 
     COST WARNING: This tool makes an API call to Minimax which may incur costs. Only use when explicitly requested by the user.
