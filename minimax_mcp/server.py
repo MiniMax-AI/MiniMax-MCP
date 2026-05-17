@@ -36,6 +36,7 @@ base_path = os.getenv(ENV_MINIMAX_MCP_BASE_PATH) or "~/Desktop"
 api_host = os.getenv(ENV_MINIMAX_API_HOST)
 resource_mode = os.getenv(ENV_RESOURCE_MODE) or RESOURCE_MODE_URL
 fastmcp_log_level = os.getenv(ENV_FASTMCP_LOG_LEVEL) or "WARNING"
+music_model = os.getenv(ENV_MUSIC_MODEL) or DEFAULT_MUSIC_MODEL
 
 if not api_key:
     raise ValueError("MINIMAX_API_KEY environment variable is required")
@@ -588,6 +589,7 @@ def text_to_image(
         bitrate (int, optional): Bitrate of generated music. Values: [32000, 64000, 128000, 256000]
         format (str, optional): Format of generated music. Values: ["mp3", "wav", "pcm"]. Defaults to "mp3"
         output_directory (str, optional): Directory to save the generated music file
+        model (str, optional): Music model to use for generation. Defaults to environment or config default
         
     Note: Currently supports generating music up to 1 minute in length.
 
@@ -598,6 +600,7 @@ def text_to_image(
 def music_generation(
     prompt: str,
     lyrics: str,
+    model: str = None,
     sample_rate: int = DEFAULT_SAMPLE_RATE,
     bitrate: int = DEFAULT_BITRATE,
     format: str = DEFAULT_FORMAT,
@@ -612,7 +615,7 @@ def music_generation(
             
             # Build request payload
             payload = {
-                "model": DEFAULT_MUSIC_MODEL,
+                "model": model or music_model,
                 "prompt": prompt,
                 "lyrics": lyrics,
                 "audio_setting": {
