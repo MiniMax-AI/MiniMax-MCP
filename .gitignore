@@ -9,6 +9,7 @@
 .venv
 .cursor
 .cursorignore
+.vscode/mcp.json
 dist/
 minimax_mcp.egg-info/
 .coverage
