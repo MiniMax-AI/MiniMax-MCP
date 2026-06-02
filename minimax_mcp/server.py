@@ -274,6 +274,11 @@ def voice_clone(
 @mcp.tool(
     description="""Play an audio file. Supports WAV and MP3 formats. Not supports video.
 
+    Note: If the exact file is not found at the given path, the server will
+    search the parent directory for files with similar names and suggest them
+    in the error message. This is for ergonomic file lookup only — no files
+    outside the parent directory are read.
+
      Args:
         input_file_path (str): The path to the audio file to play.
         is_url (bool, optional): Whether the audio file is a URL.
