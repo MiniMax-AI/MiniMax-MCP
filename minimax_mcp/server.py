@@ -29,6 +29,7 @@ from pathlib import Path
 from minimax_mcp.const import *
 from minimax_mcp.exceptions import MinimaxAPIError, MinimaxRequestError
 from minimax_mcp.client import MinimaxAPIClient
+from minimax_mcp.validators import _validate_range, _validate_enum
 
 load_dotenv()
 api_key = os.getenv(ENV_MINIMAX_API_KEY)
@@ -89,6 +90,14 @@ def text_to_audio(
 ):
     if not text:
         raise MinimaxRequestError("Text is required.")
+
+    _validate_range("speed", speed, SPEED_MIN, SPEED_MAX)
+    _validate_range("vol", vol, VOLUME_MIN, VOLUME_MAX)
+    _validate_range("pitch", pitch, PITCH_MIN, PITCH_MAX)
+    _validate_enum("sample_rate", sample_rate, VALID_SAMPLE_RATES)
+    _validate_enum("bitrate", bitrate, VALID_BITRATES)
+    _validate_enum("format", format, VALID_FORMATS)
+    _validate_range("channel", channel, CHANNEL_MIN, CHANNEL_MAX)
 
     payload = {
         "model": model,
@@ -524,6 +533,9 @@ def text_to_image(
         if not prompt:
             raise MinimaxRequestError("Prompt is required")
 
+        _validate_range("n", n, IMAGE_N_MIN, IMAGE_N_MAX)
+        _validate_enum("aspect_ratio", aspect_ratio, VALID_ASPECT_RATIOS)
+
         payload = {
             "model": model, 
             "prompt": prompt,
@@ -609,7 +621,10 @@ def music_generation(
                 raise MinimaxRequestError("Prompt is required.")
             if not lyrics:
                 raise MinimaxRequestError("Lyrics is required.")
-            
+
+            _validate_enum("sample_rate", sample_rate, VALID_SAMPLE_RATES)
+            _validate_enum("bitrate", bitrate, VALID_BITRATES)
+
             # Build request payload
             payload = {
                 "model": DEFAULT_MUSIC_MODEL,
