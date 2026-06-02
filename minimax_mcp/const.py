@@ -18,6 +18,9 @@ DEFAULT_T2V_MODEL = "MiniMax-Hailuo-2.3"
 # image model default values
 DEFAULT_T2I_MODEL = "image-01"
 
+# Default timeout (seconds) for outbound HTTP requests downloading media
+DOWNLOAD_TIMEOUT = 120
+
 # ENV variables
 ENV_MINIMAX_API_KEY = "MINIMAX_API_KEY"
 ENV_MINIMAX_API_HOST = "MINIMAX_API_HOST"
