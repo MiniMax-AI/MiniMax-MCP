@@ -87,9 +87,6 @@ def text_to_audio(
     format: str = DEFAULT_FORMAT,
     language_boost: str = DEFAULT_LANGUAGE_BOOST,
 ):
-    if not text:
-        raise MinimaxRequestError("Text is required.")
-
     payload = {
         "model": model,
         "text": text,
@@ -111,6 +108,9 @@ def text_to_audio(
     if resource_mode == RESOURCE_MODE_URL:
         payload["output_format"] = "url"
     try:
+        if not text:
+            raise MinimaxRequestError("Text is required.")
+
         response_data = api_client.post("/v1/t2a_v2", json=payload)
         audio_data = response_data.get('data', {}).get('audio', '')
         
