@@ -16,6 +16,20 @@ def test_is_file_writeable():
         temp_path = Path(temp_dir)
         assert is_file_writeable(temp_path) is True
         assert is_file_writeable(temp_path / "nonexistent.txt") is True
+        # Multi-level new path: the immediate parent does not exist yet, but
+        # mkdir(parents=True) can create it, so it must be reported writeable
+        # (regression: only the immediate parent used to be checked).
+        assert is_file_writeable(temp_path / "a" / "b" / "c") is True
+
+
+def test_build_output_path_creates_nested_dir():
+    # A nested, not-yet-existing output directory must be created rather than
+    # rejected as "not writeable".
+    with tempfile.TemporaryDirectory() as temp_dir:
+        result = build_output_path("a/b/c", temp_dir)
+        assert result == Path(temp_dir) / "a" / "b" / "c"
+        assert result.exists()
+        assert result.is_dir()
 
 
 def test_make_output_file():
