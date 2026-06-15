@@ -14,11 +14,14 @@ def is_file_writeable(path: Path) -> bool:
         return os.access(path, os.W_OK)
     # The path does not exist yet. Callers create it with
     # ``mkdir(parents=True)``, which may create several missing levels, so
-    # check writeability of the nearest existing ancestor rather than only the
-    # immediate parent (which is itself missing for a multi-level new path).
+    # check the nearest existing ancestor (the directory ``mkdir`` will
+    # actually create entries in) rather than only the immediate parent (which
+    # is itself missing for a multi-level new path). Creating a child in a
+    # directory needs both write and search (execute) permission, so check
+    # ``W_OK | X_OK``.
     for ancestor in path.parents:
         if ancestor.exists():
-            return os.access(ancestor, os.W_OK)
+            return os.access(ancestor, os.W_OK | os.X_OK)
     return False
 
 
