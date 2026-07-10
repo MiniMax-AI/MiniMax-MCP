@@ -81,6 +81,15 @@ Go to `Claude > Settings > Developer > Edit Config > claude_desktop_config.json`
 
 If you're using Windows, you will have to enable "Developer Mode" in Claude Desktop to use the MCP server. Click "Help" in the hamburger menu in the top left and select "Enable Developer Mode".
 
+### Autohand Code
+
+Register the server with [Autohand Code](https://github.com/autohandai/code-cli/) and provide the region-matched API settings:
+
+```bash
+autohand mcp add MiniMax env MINIMAX_API_KEY=insert-your-api-key-here MINIMAX_MCP_BASE_PATH=/path/to/output MINIMAX_API_HOST=https://api.minimax.io uvx minimax-mcp -y
+```
+
+Use `https://api.minimaxi.com` with a Mainland API key. Add `--scope project` after `mcp add` to keep the registration in the current workspace.
 
 ### Cursor
 Go to `Cursor -> Preferences -> Cursor Settings -> MCP -> Add new global MCP Server` to add above config.
