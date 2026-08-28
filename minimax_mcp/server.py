@@ -207,7 +207,7 @@ def voice_clone(
         # step1: upload file
         if is_url:
             # download file from url
-            response = requests.get(file, stream=True)
+            response = requests.get(file, stream=True, timeout=DOWNLOAD_TIMEOUT)
             response.raise_for_status()
             files = {'file': ('audio_file.mp3', response.raw, 'audio/mpeg')}
             data = {'purpose': 'voice_clone'}
@@ -252,7 +252,7 @@ def voice_clone(
         output_path.parent.mkdir(parents=True, exist_ok=True)
         
         with open(output_path / output_file_name, "wb") as f:
-            f.write(requests.get(response_data.get("demo_audio")).content)
+            f.write(requests.get(response_data.get("demo_audio"), timeout=DOWNLOAD_TIMEOUT).content)
 
         return TextContent(
             type="text",
@@ -283,7 +283,7 @@ def voice_clone(
 )
 def play_audio(input_file_path: str, is_url: bool = False) -> TextContent:
     if is_url:
-        play(requests.get(input_file_path).content)
+        play(requests.get(input_file_path, timeout=DOWNLOAD_TIMEOUT).content)
         return TextContent(type="text", text=f"Successfully played audio file: {input_file_path}")
     else:
         file_path = process_input_file(input_file_path)
@@ -409,11 +409,13 @@ def generate_video(
         output_file_name = build_output_file("video", task_id, output_path, "mp4", True)
         output_path.parent.mkdir(parents=True, exist_ok=True)
 
-        video_response = requests.get(download_url)
+        video_response = requests.get(download_url, timeout=DOWNLOAD_TIMEOUT, stream=True)
         video_response.raise_for_status()
-        
+
         with open(output_path / output_file_name, "wb") as f:
-            f.write(video_response.content)
+            for chunk in video_response.iter_content(chunk_size=8192):
+                if chunk:
+                    f.write(chunk)
 
         return TextContent(
             type="text",
@@ -479,11 +481,13 @@ def query_video_generation(task_id: str, output_directory: str = None) -> TextCo
         output_file_name = build_output_file("video", task_id, output_path, "mp4", True)
         output_path.parent.mkdir(parents=True, exist_ok=True)
 
-        video_response = requests.get(download_url)
+        video_response = requests.get(download_url, timeout=DOWNLOAD_TIMEOUT, stream=True)
         video_response.raise_for_status()
 
         with open(output_path / output_file_name, "wb") as f:
-            f.write(video_response.content)
+            for chunk in video_response.iter_content(chunk_size=8192):
+                if chunk:
+                    f.write(chunk)
 
         return TextContent(
             type="text",
@@ -549,7 +553,7 @@ def text_to_image(
             output_file_name = build_output_file("image", f"{i}_{prompt}", output_path, "jpg")
             output_path.parent.mkdir(parents=True, exist_ok=True)
             
-            image_response = requests.get(image_url)
+            image_response = requests.get(image_url, timeout=DOWNLOAD_TIMEOUT)
             image_response.raise_for_status()
             
             with open(output_file_name, 'wb') as f:
