@@ -12,8 +12,17 @@ from minimax_mcp.exceptions import MinimaxMcpError
 def is_file_writeable(path: Path) -> bool:
     if path.exists():
         return os.access(path, os.W_OK)
-    parent_dir = path.parent
-    return os.access(parent_dir, os.W_OK)
+    # The path does not exist yet. Callers create it with
+    # ``mkdir(parents=True)``, which may create several missing levels, so
+    # check the nearest existing ancestor (the directory ``mkdir`` will
+    # actually create entries in) rather than only the immediate parent (which
+    # is itself missing for a multi-level new path). Creating a child in a
+    # directory needs both write and search (execute) permission, so check
+    # ``W_OK | X_OK``.
+    for ancestor in path.parents:
+        if ancestor.exists():
+            return os.access(ancestor, os.W_OK | os.X_OK)
+    return False
 
 
 def build_output_file(
