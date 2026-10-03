@@ -1,4 +1,5 @@
 import os
+import re
 from pathlib import Path
 from datetime import datetime
 from fuzzywuzzy import fuzz
@@ -20,6 +21,7 @@ def build_output_file(
     tool: str, text: str, output_path: Path, extension: str, full_id: bool = False
 ) -> Path:
     id = text if full_id else text[:10]
+    id = re.sub(r'[<>:"/\\|?*\x00-\x1f]', "_", id)
 
     output_file_name = f"{tool}_{id.replace(' ', '_')}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.{extension}"
     return output_path / output_file_name
@@ -168,5 +170,4 @@ def play(
     out, err = proc.communicate(input=audio)
 
     proc.poll()
-
 
