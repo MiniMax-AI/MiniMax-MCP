@@ -148,7 +148,7 @@ def text_to_audio(
     description="""List all voices available.
 
     Args:
-        voice_type (str, optional): The type of voices to list. Values range ["all", "system", "voice_cloning"], with "all" being the default.
+        voice_type (str, optional): The type of voices to list. Values range ["all", "system", "voice_cloning", "voice_generation"], with "all" being the default.
     Returns:
         Text content with the list of voices.
     """
@@ -161,6 +161,7 @@ def list_voices(
         
         system_voices = response_data.get('system_voice', []) or []
         voice_cloning_voices = response_data.get('voice_cloning', []) or []
+        voice_generation_voices = response_data.get('voice_generation', []) or []
         system_voice_list = []
         voice_cloning_voice_list = []
         
@@ -169,10 +170,14 @@ def list_voices(
         for voice in voice_cloning_voices:
             voice_cloning_voice_list.append(f"Name: {voice.get('voice_name')}, ID: {voice.get('voice_id')}")
 
-        return TextContent(
-            type="text",
-            text=f"Success. System Voices: {system_voice_list}, Voice Cloning Voices: {voice_cloning_voice_list}"
-        )
+        result_text = f"Success. System Voices: {system_voice_list}, Voice Cloning Voices: {voice_cloning_voice_list}"
+        if voice_generation_voices or voice_type == "voice_generation":
+            voice_generation_voice_list = [
+                f"ID: {voice.get('voice_id')}" for voice in voice_generation_voices
+            ]
+            result_text += f", Voice Generation Voices: {voice_generation_voice_list}"
+
+        return TextContent(type="text", text=result_text)
         
     except MinimaxAPIError as e:
         return TextContent(
