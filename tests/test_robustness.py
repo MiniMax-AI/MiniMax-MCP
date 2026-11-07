@@ -8,39 +8,41 @@ from minimax_mcp.client import MinimaxAPIClient
 from minimax_mcp.const import REQUEST_TIMEOUT
 
 
+class FakeResponse:
+    """Minimal response good enough for _make_request's post-HTTP checks."""
+
+    def raise_for_status(self):
+        pass
+
+    def json(self):
+        return {"base_resp": {"status_code": 0}, "system_voice": []}
+
+
+def capture_request(client, seen):
+    original = client.session.request
+
+    def capture(method, url, **kwargs):
+        seen.update(kwargs)
+        return FakeResponse()
+
+    client.session.request = capture
+
+
 def test_client_requests_carry_timeout():
     """Every API request must send a timeout so a stalled endpoint cannot
     hang the synchronous MCP tool forever."""
     client = MinimaxAPIClient("test-api-key", "https://api.example.invalid")
     seen = {}
-    original = client.session.request
-
-    def capture(method, url, **kwargs):
-        seen.update(kwargs)
-        return original(method, url, **kwargs)
-
-    client.session.request = capture
-    try:
-        client.post("/v1/get_voice", json={"voice_type": "all"})
-    except Exception:
-        pass  # the endpoint is unreachable; only the request shape matters
+    capture_request(client, seen)
+    client.post("/v1/get_voice", json={"voice_type": "all"})
     assert seen.get("timeout") == REQUEST_TIMEOUT
 
 
 def test_client_timeout_is_overridable_per_call():
     client = MinimaxAPIClient("test-api-key", "https://api.example.invalid")
     seen = {}
-    original = client.session.request
-
-    def capture(method, url, **kwargs):
-        seen.update(kwargs)
-        return original(method, url, **kwargs)
-
-    client.session.request = capture
-    try:
-        client.get("/v1/files/retrieve?file_id=x", timeout=(5, 30))
-    except Exception:
-        pass
+    capture_request(client, seen)
+    client.get("/v1/files/retrieve?file_id=x", timeout=(5, 30))
     assert seen.get("timeout") == (5, 30)
 
 

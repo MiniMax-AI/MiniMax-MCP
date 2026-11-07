@@ -253,7 +253,11 @@ def voice_clone(
         output_path.parent.mkdir(parents=True, exist_ok=True)
         
         with open(output_path / output_file_name, "wb") as f:
-            f.write(requests.get(response_data.get("demo_audio"), timeout=REQUEST_TIMEOUT).content)
+            f.write(
+                requests.get(
+                    response_data.get("demo_audio"), timeout=REQUEST_TIMEOUT
+                ).content
+            )
 
         return TextContent(
             type="text",
