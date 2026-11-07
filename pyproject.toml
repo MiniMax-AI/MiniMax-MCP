@@ -31,8 +31,6 @@ dependencies = [
     "httpx>=0.28.1",
     "fuzzywuzzy>=0.18.0",
     "python-Levenshtein>=0.25.0",
-    "sounddevice>=0.5.1",
-    "soundfile>=0.13.1",
     "requests>=2.31.0",
 ]
 

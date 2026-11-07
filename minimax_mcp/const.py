@@ -27,3 +27,7 @@ RESOURCE_MODE_LOCAL = "local" # save resource to local file system
 RESOURCE_MODE_URL = "url" # provide resource url
 
 ENV_FASTMCP_LOG_LEVEL = "FASTMCP_LOG_LEVEL"
+
+# network timeouts (seconds); read timeout applies between received bytes,
+# so large downloads are not aborted while they keep making progress
+REQUEST_TIMEOUT = 120
