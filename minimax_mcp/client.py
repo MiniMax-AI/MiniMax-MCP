@@ -2,6 +2,7 @@
 
 import requests
 from typing import Any, Dict
+from minimax_mcp.const import REQUEST_TIMEOUT
 from minimax_mcp.exceptions import MinimaxAuthError, MinimaxRequestError
 
 class MinimaxAPIClient:
@@ -54,6 +55,9 @@ class MinimaxAPIClient:
             self.session.headers.pop('Content-Type', None)
         
         try:
+            # Never hang forever on an unresponsive endpoint; callers may
+            # still override the timeout per request via kwargs.
+            kwargs.setdefault("timeout", REQUEST_TIMEOUT)
             response = self.session.request(method, url, **kwargs)
             
             # Check for other HTTP errors
