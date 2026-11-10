@@ -61,9 +61,9 @@ class MinimaxAPIClient:
             
             data = response.json()
             
-            # Check API-specific error codes
-            base_resp = data.get("base_resp", {})
-            if base_resp.get("status_code") != 0:
+            # Check API-specific error codes (H3 image endpoints omit base_resp on success)
+            base_resp = data.get("base_resp")
+            if base_resp is not None and base_resp.get("status_code") != 0:
                 match base_resp.get("status_code"):
                     case 1004:
                         raise MinimaxAuthError(

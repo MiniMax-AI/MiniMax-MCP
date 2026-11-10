@@ -15,7 +15,10 @@ DEFAULT_LANGUAGE_BOOST = "auto"
 DEFAULT_T2V_MODEL = "MiniMax-Hailuo-2.3"
 
 # image model default values
-DEFAULT_T2I_MODEL = "image-01"
+IMAGE_H3_MODEL = "MiniMax-H3-Image"
+DEFAULT_T2I_MODEL = IMAGE_H3_MODEL
+# H3 image endpoints wait up to 600s and are not idempotent, so do not time out earlier.
+IMAGE_H3_REQUEST_TIMEOUT = 610
 
 # ENV variables
 ENV_MINIMAX_API_KEY = "MINIMAX_API_KEY"
