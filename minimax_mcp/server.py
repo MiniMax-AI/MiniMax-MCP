@@ -13,10 +13,11 @@ Note: Tools without cost warnings are free to use as they only read existing dat
 
 import os
 import base64
+import mimetypes
 import requests
 import time
 from dotenv import load_dotenv
-from mcp.server.fastmcp import FastMCP
+from mcp.server import MCPServer
 from mcp.types import TextContent
 from minimax_mcp.utils import (
     build_output_path,
@@ -42,7 +43,7 @@ if not api_key:
 if not api_host:
     raise ValueError("MINIMAX_API_HOST environment variable is required")
 
-mcp = FastMCP("Minimax",log_level=fastmcp_log_level)
+mcp = MCPServer("Minimax",log_level=fastmcp_log_level)
 api_client = MinimaxAPIClient(api_key, api_host)
 
 
@@ -287,7 +288,8 @@ def play_audio(input_file_path: str, is_url: bool = False) -> TextContent:
         return TextContent(type="text", text=f"Successfully played audio file: {input_file_path}")
     else:
         file_path = process_input_file(input_file_path)
-        play(open(file_path, "rb").read())
+        with open(file_path, "rb") as f:
+            play(f.read())
         return TextContent(type="text", text=f"Successfully played audio file: {file_path}")
 
 
@@ -495,16 +497,81 @@ def query_video_generation(task_id: str, output_directory: str = None) -> TextCo
         )
 
 
+def _collect_image_urls(response_data):
+    data = response_data.get("data")
+    if isinstance(data, list):
+        return [item["url"] for item in data if isinstance(item, dict) and item.get("url")]
+    if isinstance(data, dict):
+        return data.get("image_urls", [])
+    return []
+
+
+def _h3_image_ref(image: str) -> str:
+    if image.startswith(("http://", "https://", "data:", "mm_file://")):
+        return image
+    path = process_input_file(image, audio_content_check=False)
+    mime = mimetypes.guess_type(path.name)[0] or "image/jpeg"
+    encoded = base64.b64encode(path.read_bytes()).decode("ascii")
+    return f"data:{mime};base64,{encoded}"
+
+
+def _h3_image_payload(model, prompt, n, aspect_ratio, area, size, disable_prompt_enhanced=False):
+    payload = {
+        "model": model,
+        "prompt": prompt,
+        "n": n,
+    }
+    if size:
+        payload["size"] = size
+    if not size or size == "auto":
+        payload["aspect_ratio"] = aspect_ratio
+        if area:
+            payload["area"] = area
+    if disable_prompt_enhanced:
+        payload["disable_prompt_enhanced"] = True
+    return payload
+
+
+def _image_tool_result(image_urls, prompt, output_directory):
+    if not image_urls:
+        raise MinimaxRequestError("No images generated")
+    if resource_mode == RESOURCE_MODE_URL:
+        return TextContent(
+            type="text",
+            text=f"Success. Image URLs: {image_urls}"
+        )
+    output_path = build_output_path(output_directory, base_path)
+    output_file_names = []
+
+    for i, image_url in enumerate(image_urls):
+        output_file_name = build_output_file("image", f"{i}_{prompt}", output_path, "jpg")
+        output_path.parent.mkdir(parents=True, exist_ok=True)
+
+        image_response = requests.get(image_url)
+        image_response.raise_for_status()
+
+        with open(output_file_name, 'wb') as f:
+            f.write(image_response.content)
+        output_file_names.append(output_file_name)
+
+    return TextContent(
+        type="text",
+        text=f"Success. Images saved as: {output_file_names}"
+    )
+
+
 @mcp.tool(
     description="""Generate a image from a prompt.
 
     COST WARNING: This tool makes an API call to Minimax which may incur costs. Only use when explicitly requested by the user.
 
      Args:
-        model (str, optional): The model to use. Values range ["image-01"], with "image-01" being the default.
+        model (str, optional): The model to use. Values range ["MiniMax-H3-Image", "image-01"], with "MiniMax-H3-Image" being the default.
         prompt (str): The prompt to generate the image from.
-        aspect_ratio (str, optional): The aspect ratio of the image. Values range ["1:1", "16:9","4:3", "3:2", "2:3", "3:4", "9:16", "21:9"], with "1:1" being the default.
-        n (int, optional): The number of images to generate. Values range [1, 9], with 1 being the default.
+        aspect_ratio (str, optional): The aspect ratio of the image. MiniMax-H3-Image: auto or X:Y (1:3 to 3:1), default "1:1". image-01: ["1:1", "16:9","4:3", "3:2", "2:3", "3:4", "9:16", "21:9"]. Cannot be combined with size=WIDTHxHEIGHT.
+        area (str, optional): MiniMax-H3-Image only: output area "1K", "2K", or "4K". The API defaults to 4K if omitted. Cannot be combined with size=WIDTHxHEIGHT.
+        size (str, optional): MiniMax-H3-Image only: "auto" or WIDTHxHEIGHT (e.g. 1024x1024). WIDTHxHEIGHT cannot be combined with aspect_ratio or area.
+        n (int, optional): The number of images to generate. MiniMax-H3-Image: [1, 10]. image-01: [1, 9]. Default 1.
         prompt_optimizer (bool, optional): Whether to optimize the prompt. Values range [True, False], with True being the default.
         output_directory (str): The directory to save the image to.
     Returns:
@@ -515,6 +582,8 @@ def text_to_image(
     model: str = DEFAULT_T2I_MODEL,
     prompt: str = "",
     aspect_ratio: str = "1:1",
+    area: str = None,
+    size: str = None,
     n: int = 1,
     prompt_optimizer: bool = True,
     output_directory: str = None,
@@ -523,43 +592,28 @@ def text_to_image(
         if not prompt:
             raise MinimaxRequestError("Prompt is required")
 
-        payload = {
-            "model": model, 
-            "prompt": prompt,
-            "aspect_ratio": aspect_ratio,
-            "n": n,
-            "prompt_optimizer": prompt_optimizer
-        }
-
-        response_data = api_client.post("/v1/image_generation", json=payload)
-        image_urls = response_data.get("data",{}).get("image_urls",[])
-        
-        if not image_urls:
-            raise MinimaxRequestError("No images generated")
-        if resource_mode == RESOURCE_MODE_URL:
-            return TextContent(
-                type="text",
-                text=f"Success. Image URLs: {image_urls}"
+        if model == IMAGE_H3_MODEL:
+            payload = _h3_image_payload(
+                model, prompt, n, aspect_ratio, area, size,
+                disable_prompt_enhanced=not prompt_optimizer,
             )
-        output_path = build_output_path(output_directory, base_path)
-        output_file_names = []
-        
-        for i, image_url in enumerate(image_urls):
-            output_file_name = build_output_file("image", f"{i}_{prompt}", output_path, "jpg")
-            output_path.parent.mkdir(parents=True, exist_ok=True)
-            
-            image_response = requests.get(image_url)
-            image_response.raise_for_status()
-            
-            with open(output_file_name, 'wb') as f:
-                f.write(image_response.content)
-            output_file_names.append(output_file_name)
-            
-        return TextContent(
-            type="text",
-            text=f"Success. Images saved as: {output_file_names}"
-        )
-        
+            response_data = api_client.post(
+                "/v1/images/generations",
+                json=payload,
+                timeout=IMAGE_H3_REQUEST_TIMEOUT,
+            )
+        else:
+            payload = {
+                "model": model,
+                "prompt": prompt,
+                "aspect_ratio": aspect_ratio,
+                "n": n,
+                "prompt_optimizer": prompt_optimizer
+            }
+            response_data = api_client.post("/v1/image_generation", json=payload)
+
+        return _image_tool_result(_collect_image_urls(response_data), prompt, output_directory)
+
     except MinimaxAPIError as e:
         return TextContent(
             type="text",
@@ -572,95 +626,57 @@ def text_to_image(
         )
 
 @mcp.tool(
-    description="""Create a music generation task using AI models. Generate music from prompt and lyrics.
+    description="""Edit an image with MiniMax-H3-Image using a prompt and 1-16 reference images.
 
     COST WARNING: This tool makes an API call to Minimax which may incur costs. Only use when explicitly requested by the user.
 
-    Args:
-        prompt (str): Music creation inspiration describing style, mood, scene, etc.
-            Example: "Pop music, sad, suitable for rainy nights". Character range: [10, 300]
-        lyrics (str): Song lyrics for music generation.
-            Use newline (\\n) to separate each line of lyrics. Supports lyric structure tags [Intro][Verse][Chorus][Bridge][Outro] 
-            to enhance musicality. Character range: [10, 600] (each Chinese character, punctuation, and letter counts as 1 character)
-        stream (bool, optional): Whether to enable streaming mode. Defaults to False
-        sample_rate (int, optional): Sample rate of generated music. Values: [16000, 24000, 32000, 44100]
-        bitrate (int, optional): Bitrate of generated music. Values: [32000, 64000, 128000, 256000]
-        format (str, optional): Format of generated music. Values: ["mp3", "wav", "pcm"]. Defaults to "mp3"
-        output_directory (str, optional): Directory to save the generated music file
-        
-    Note: Currently supports generating music up to 1 minute in length.
-
+     Args:
+        prompt (str): The edit instruction. Refer to images in order as Picture 1, Picture 2, and so on.
+        images (list[str]): 1-16 reference images: URL, data URI, mm_file:// ID, or local file path.
+        model (str, optional): The model to use. Currently "MiniMax-H3-Image".
+        aspect_ratio (str, optional): Aspect ratio auto or X:Y (1:3 to 3:1), default "1:1". Cannot be combined with size=WIDTHxHEIGHT.
+        area (str, optional): Output area "1K", "2K", or "4K". The API defaults to 4K if omitted. Cannot be combined with size=WIDTHxHEIGHT.
+        size (str, optional): "auto" or WIDTHxHEIGHT. WIDTHxHEIGHT cannot be combined with aspect_ratio or area.
+        n (int, optional): The number of images to generate, [1, 10], default 1.
+        output_directory (str): The directory to save the image to.
     Returns:
-        Text content with the path to the generated music file or generation status.
+        Text content with the path to the output image file.
     """
 )
-def music_generation(
+def image_edit(
     prompt: str,
-    lyrics: str,
-    sample_rate: int = DEFAULT_SAMPLE_RATE,
-    bitrate: int = DEFAULT_BITRATE,
-    format: str = DEFAULT_FORMAT,
-    output_directory: str = None
-) -> TextContent:
-        try:
-            # prompt and lyrics params check
-            if not prompt:
-                raise MinimaxRequestError("Prompt is required.")
-            if not lyrics:
-                raise MinimaxRequestError("Lyrics is required.")
-            
-            # Build request payload
-            payload = {
-                "model": DEFAULT_MUSIC_MODEL,
-                "prompt": prompt,
-                "lyrics": lyrics,
-                "audio_setting": {
-                    "sample_rate": sample_rate,
-                    "bitrate": bitrate,
-                    "format": format
-                },
-            }
-            if resource_mode == RESOURCE_MODE_URL:
-                payload["output_format"] = "url"
+    images: list[str],
+    model: str = IMAGE_H3_MODEL,
+    aspect_ratio: str = "1:1",
+    area: str = None,
+    size: str = None,
+    n: int = 1,
+    output_directory: str = None,
+):
+    try:
+        if not prompt:
+            raise MinimaxRequestError("Prompt is required")
+        if not images:
+            raise MinimaxRequestError("At least one reference image is required")
 
-            # Call music generation API
-            response_data = api_client.post("/v1/music_generation", json=payload)
-                    
-            # Handle response
-            data = response_data.get('data', {})
-            audio_hex = data.get('audio', '')
+        payload = _h3_image_payload(model, prompt, n, aspect_ratio, area, size)
+        payload["images"] = [{"image_url": _h3_image_ref(image)} for image in images]
+        response_data = api_client.post(
+            "/v1/images/edits",
+            json=payload,
+            timeout=IMAGE_H3_REQUEST_TIMEOUT,
+        )
+        return _image_tool_result(_collect_image_urls(response_data), prompt, output_directory)
 
-            if resource_mode == RESOURCE_MODE_URL:
-                return TextContent(
-                    type="text",
-                    text=f"Success. Music url: {audio_hex}"
-                )
-
-            output_path = build_output_path(output_directory, base_path)
-            output_file_name = build_output_file("music", f"{prompt}", output_path, format)
-            output_path.parent.mkdir(parents=True, exist_ok=True)
-
-            # hex->bytes
-            audio_bytes = bytes.fromhex(audio_hex)
-
-            # save audio to file
-            with open(output_path / output_file_name, "wb") as f:
-                f.write(audio_bytes)
-
-            return TextContent(
-                type="text",
-                text=f"Success. Music saved as: {output_path / output_file_name}"
-            )
-        
-        except MinimaxAPIError as e:
-            return TextContent(
-                type="text",
-                text=f"Failed to generate music: {str(e)}"
-            )
-        except (IOError, requests.RequestException) as e:
-            return TextContent(
-                type="text",
-                text=f"Failed to save music: {str(e)}"
+    except MinimaxAPIError as e:
+        return TextContent(
+            type="text",
+            text=f"Failed to edit images: {str(e)}"
+        )
+    except (IOError, requests.RequestException) as e:
+        return TextContent(
+            type="text",
+            text=f"Failed to save images: {str(e)}"
         )
 
 @mcp.tool(

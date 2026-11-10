@@ -35,6 +35,8 @@
   Official MiniMax Model Context Protocol (MCP) server that enables interaction with powerful Text to Speech and video/image generation APIs. This server allows MCP clients like <a href="https://www.anthropic.com/claude">Claude Desktop</a>, <a href="https://www.cursor.so">Cursor</a>, <a href="https://codeium.com/windsurf">Windsurf</a>, <a href="https://github.com/openai/openai-agents-python">OpenAI Agents</a> and others to generate speech, clone voices, generate video, generate image and more.
 </p>
 
+> 💡 Recommended: **[MiniMax CLI (mmx-cli)](https://github.com/MiniMax-AI/cli)** — our official command-line tool with the latest models and additional features including text, vision, and search. Works as an AI agent skill for Claude Code, Cursor, OpenClaw, etc.
+
 ## Documentation
 - [中文文档](README-CN.md)
 - [MiniMax-MCP-JS](https://github.com/MiniMax-AI/MiniMax-MCP-JS) - Official JavaScript implementation of MiniMax MCP
@@ -100,24 +102,31 @@ We support two transport types: stdio and sse.
 |`list_voices`|List all voices available|
 |`voice_clone`|Clone a voice using provided audio files|
 |`generate_video`|Generate a video from a prompt|
-|`text_to_image`|Generate a image from a prompt|
+|`text_to_image`|Generate an image from a prompt. Defaults to MiniMax-H3-Image (supports `area` 1K/2K/4K and `size`); `image-01` is still available via `model`|
+|`image_edit`|Edit an image with MiniMax-H3-Image using a prompt and 1-16 reference images|
 |`query_video_generation`|Query the result of video generation task|
-|`music_generation`|Generate a music track from a prompt and lyrics|
 |`voice_design`|Generate a voice from a prompt using preview text|
 
 ## Release Notes
+
+### November 10, 2026
+
+#### 🆕 What's New
+- **Image Edit**: New `image_edit` tool — edit images with MiniMax-H3-Image using a prompt and 1-16 reference images (URL, data URI, `mm_file://`, or local path)
+- **H3 Image Generation**: `text_to_image` now defaults to MiniMax-H3-Image and supports `area` (1K/2K/4K) and `size`; `image-01` remains available via the `model` parameter
+
+#### 📈 Enhanced Tools
+- `text_to_image` - Defaults to MiniMax-H3-Image (`/v1/images/generations`); pass `model="image-01"` for the previous model
 
 ### July 2, 2025
 
 #### 🆕 What's New
 - **Voice Design**: New `voice_design` tool - create custom voices from descriptive prompts with preview audio
 - **Video Enhancement**: Added `MiniMax-Hailuo-02` model with ultra-clear quality and duration/resolution controls  
-- **Music Generation**: Enhanced `music_generation` tool powered by `music-1.5` model
 
 #### 📈 Enhanced Tools
 - `voice_design` - Generate personalized voices from text descriptions
 - `generate_video` - Now supports MiniMax-Hailuo-02 with 6s/10s duration and 768P/1080P resolution options
-- `music_generation` - High-quality music creation with music-1.5 model
 
 ## FAQ
 ### 1. invalid api key
