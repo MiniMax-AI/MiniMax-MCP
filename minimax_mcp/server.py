@@ -568,8 +568,8 @@ def _image_tool_result(image_urls, prompt, output_directory):
      Args:
         model (str, optional): The model to use. Values range ["MiniMax-H3-Image", "image-01"], with "MiniMax-H3-Image" being the default.
         prompt (str): The prompt to generate the image from.
-        aspect_ratio (str, optional): The aspect ratio of the image. MiniMax-H3-Image: auto or X:Y (1:3 to 3:1), default "1:1". image-01: ["1:1", "16:9","4:3", "3:2", "2:3", "3:4", "9:16", "21:9"]. Cannot be combined with size.
-        area (str, optional): MiniMax-H3-Image only: output area "1K", "2K", or "4K". The API defaults to 4K if omitted. Cannot be combined with size.
+        aspect_ratio (str, optional): The aspect ratio of the image. MiniMax-H3-Image: auto or X:Y (1:3 to 3:1), default "1:1". image-01: ["1:1", "16:9","4:3", "3:2", "2:3", "3:4", "9:16", "21:9"]. Cannot be combined with size=WIDTHxHEIGHT.
+        area (str, optional): MiniMax-H3-Image only: output area "1K", "2K", or "4K". The API defaults to 4K if omitted. Cannot be combined with size=WIDTHxHEIGHT.
         size (str, optional): MiniMax-H3-Image only: "auto" or WIDTHxHEIGHT (e.g. 1024x1024). WIDTHxHEIGHT cannot be combined with aspect_ratio or area.
         n (int, optional): The number of images to generate. MiniMax-H3-Image: [1, 10]. image-01: [1, 9]. Default 1.
         prompt_optimizer (bool, optional): Whether to optimize the prompt. Values range [True, False], with True being the default.
@@ -634,8 +634,8 @@ def text_to_image(
         prompt (str): The edit instruction. Refer to images in order as Picture 1, Picture 2, and so on.
         images (list[str]): 1-16 reference images: URL, data URI, mm_file:// ID, or local file path.
         model (str, optional): The model to use. Currently "MiniMax-H3-Image".
-        aspect_ratio (str, optional): Aspect ratio auto or X:Y (1:3 to 3:1), default "1:1". Cannot be combined with size.
-        area (str, optional): Output area "1K", "2K", or "4K". The API defaults to 4K if omitted. Cannot be combined with size.
+        aspect_ratio (str, optional): Aspect ratio auto or X:Y (1:3 to 3:1), default "1:1". Cannot be combined with size=WIDTHxHEIGHT.
+        area (str, optional): Output area "1K", "2K", or "4K". The API defaults to 4K if omitted. Cannot be combined with size=WIDTHxHEIGHT.
         size (str, optional): "auto" or WIDTHxHEIGHT. WIDTHxHEIGHT cannot be combined with aspect_ratio or area.
         n (int, optional): The number of images to generate, [1, 10], default 1.
         output_directory (str): The directory to save the image to.

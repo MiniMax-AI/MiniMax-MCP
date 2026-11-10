@@ -104,10 +104,20 @@
 |`list_voices`|查询所有可用音色|
 |`voice_clone`|根据指定音频文件克隆音色|
 |`generate_video`|根据指定 prompt 生成视频|
-|`text_to_image`|根据指定 prompt 生成图片|
+|`text_to_image`|根据指定 prompt 生成图片。默认 MiniMax-H3-Image（支持 `area` 1K/2K/4K 和 `size`）；仍可通过 `model` 使用 `image-01`|
+|`image_edit`|使用 MiniMax-H3-Image，根据 prompt 和 1-16 张参考图编辑图片|
 |`voice_design`|根据指定 prompt 生成音色和试听文本|
 
 ## 更新日志
+
+### 2026年11月10日
+
+#### 🆕 新增功能
+- **图像编辑**: 新增 `image_edit` 工具 — 使用 MiniMax-H3-Image，根据 prompt 和 1-16 张参考图（URL、data URI、`mm_file://` 或本地路径）编辑图片
+- **H3 图像生成**: `text_to_image` 默认改为 MiniMax-H3-Image，支持 `area`（1K/2K/4K）和 `size`；仍可通过 `model` 使用 `image-01`
+
+#### 📈 功能增强
+- `text_to_image` - 默认使用 MiniMax-H3-Image（`/v1/images/generations`）；传入 `model="image-01"` 可继续使用原模型
 
 ### 2025年7月2日
 

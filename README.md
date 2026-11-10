@@ -102,11 +102,21 @@ We support two transport types: stdio and sse.
 |`list_voices`|List all voices available|
 |`voice_clone`|Clone a voice using provided audio files|
 |`generate_video`|Generate a video from a prompt|
-|`text_to_image`|Generate a image from a prompt|
+|`text_to_image`|Generate an image from a prompt. Defaults to MiniMax-H3-Image (supports `area` 1K/2K/4K and `size`); `image-01` is still available via `model`|
+|`image_edit`|Edit an image with MiniMax-H3-Image using a prompt and 1-16 reference images|
 |`query_video_generation`|Query the result of video generation task|
 |`voice_design`|Generate a voice from a prompt using preview text|
 
 ## Release Notes
+
+### November 10, 2026
+
+#### 🆕 What's New
+- **Image Edit**: New `image_edit` tool — edit images with MiniMax-H3-Image using a prompt and 1-16 reference images (URL, data URI, `mm_file://`, or local path)
+- **H3 Image Generation**: `text_to_image` now defaults to MiniMax-H3-Image and supports `area` (1K/2K/4K) and `size`; `image-01` remains available via the `model` parameter
+
+#### 📈 Enhanced Tools
+- `text_to_image` - Defaults to MiniMax-H3-Image (`/v1/images/generations`); pass `model="image-01"` for the previous model
 
 ### July 2, 2025
 
